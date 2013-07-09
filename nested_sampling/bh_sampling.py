@@ -480,10 +480,11 @@ class NestedSamplingBS(NestedSampling):
 
     def onset_prob_func(self, a, b, c, Emax):
         dE = float(self.minima[-1].energy) - Emax
-        if (b * (dE + c)) > 100:
+        f = b * (dE + c)
+        if f > 100:
             onset_prob = 0
         else:
-            onset_prob = a / ( 1. + np.exp(-b * (dE + c)) )
+            onset_prob = a / ( 1. + np.exp(-f))
         return onset_prob
     
     def get_starting_configuration(self, Emax):
