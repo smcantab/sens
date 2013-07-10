@@ -192,7 +192,7 @@ class NestedSampling(object):
     replicas : list
         list of objects of type Replica
         """
-    def __init__(self, system, nreplicas, mc_runner, mciter=100, 
+    def __init__(self, system, nreplicas, mc_runner, mciter=100, target_ratio = 0.7, 
                  stepsize=None, nproc=1, triv_paral=True, verbose=True):
         self.system = system
         self.mciter = mciter
@@ -202,7 +202,8 @@ class NestedSampling(object):
         self.nreplicas = nreplicas
         self.mc_runner = mc_runner
         self.stepsize = stepsize
-
+        self.target_ratio = target_ratio
+        
         self.max_energies = []
         
         self.setup_replicas(nreplicas)
@@ -346,11 +347,11 @@ class NestedSampling(object):
         """
         if self.stepsize is None: return
         f = 0.8
-        target_ratio = 0.7
+        #target_ratio = 0.7
         max_stepsize = 0.5 # these should to be passed
         ratio = float(sum(m.naccept for m in mc))/ sum(m.nsteps for m in mc)  
         
-        if ratio < target_ratio:
+        if ratio < self.target_ratio:
             # reduce step size
             self.stepsize *= f
         else:

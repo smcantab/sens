@@ -81,7 +81,7 @@ class MonteCarloCompiled(object):
         res.energy = energy
         return res
 
-def run_nested_sampling_lj(system, nreplicas=300, mciter=1000, label="test", 
+def run_nested_sampling_lj(system, nreplicas=300, mciter=1000, target_ratio=0.7, label="test", 
                            minima=None, use_compiled=True, nproc=1,
                            triv_paral=True, minprob=1, maxiter=1e100, **kwargs):
     takestep = RandomDisplacement(stepsize=0.07)
@@ -112,11 +112,11 @@ def run_nested_sampling_lj(system, nreplicas=300, mciter=1000, label="test",
         assert(len(minima) > 0)
         print "using", len(minima), "minima"
         ns = NestedSamplingBS(system, nreplicas, mc_runner, minima, 
-                              mciter=mciter, stepsize=0.07,
+                              mciter=mciter, target_ratio=target_ratio,stepsize=0.07,
                               nproc=nproc, triv_paral=triv_paral, minprob=minprob, **kwargs)
     else:
         ns = NestedSampling(system, nreplicas, mc_runner, 
-                            mciter=mciter, stepsize=0.07,
+                            mciter=mciter, target_ratio=target_ratio,stepsize=0.07,
                             nproc=nproc, triv_paral=triv_paral, **kwargs)
     etol = 0.01
 
@@ -140,6 +140,7 @@ def main():
     parser.add_argument("-a", "--minprob", type=float, help="probability of sampling from minima as a/K, default a=1",default=1)
     parser.add_argument("-S", "--system", type=int, help="define system type: 1 is LJ \n2 is HarParticle \n3 is Ising",default=1)
     parser.add_argument("-r", "--bradius", type=float, help="define the box radius (default 2.5)",default=2.5)
+    parser.add_argument("-t", "--tratio", type=float, help="define the target ratio for steps adjustment (default 0.7)",default=0.7)
     args = parser.parse_args()
     print args
     
@@ -151,6 +152,7 @@ def main():
     mciter = args.mciter
     nminima = args.nminima
     bradius = args.bradius
+    target_ratio = args.tratio
     
     if args.system == 1:
         system = LJClusterNew(natoms, bradius)
@@ -194,7 +196,7 @@ def main():
     
     # run nested sampling
     ns = run_nested_sampling_lj(system, nreplicas=nreplicas, 
-                             label=label, minima=minima, mciter=mciter, 
+                             label=label, minima=minima, mciter=mciter, target_ratio=target_ratio,
                              use_compiled=args.not_compiled_mc, nproc=nproc, triv_paral = triv_paral, minprob = minprob)
 
 #    with open(label + ".energies", "w") as fout:
