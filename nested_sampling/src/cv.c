@@ -6,10 +6,11 @@ double max_array(double* a, int N);
 double X_imp(int i, double K, double P);
 void compute_dos(double* gl, int N, double P, double K, int live);
 void compute_dos_imp(double* gl, int N, double P, double K, int live);
+void compute_dos_log(double* gl, int N, double P, double K, int live);
 void renorm_energies(double* El, int N, double Emin);
-void log_weigths(double* El, double* gl, double* wl, int N, double T);
+void log_weigths(double* El, double* gl, double* wl, int N, double T, int logscale);
 double heat_capacity(double* El, double* gl, int N, double T, double ndof);
-void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, double Tmin, double Tmax, int nT, double ndof);
+void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, double Tmin, double Tmax, int nT, double ndof, int logscale);
 
 double max_array(double* a, int N)
 {
@@ -34,12 +35,12 @@ double X_imp(int i, double K, double P)
 
 void compute_dos(double* gl, int N, double P, double K, int live)
 {
-  // gl is an array of 0's of size N, K is the number of replicas
-  int i,lim;
+  /* gl is an array of 0's of size N, K is the number of replicas */
+  int i,j,lim;
   double X = 1 - P/(K+1);
   double Xm = X; //this is X1
   double Xf, Xb;
-  Xb = 2-X; // reflecting boundary condition, this is X0
+  Xb = 2-X; /* reflecting boundary condition, this is X0 */
   Xf = Xm * X; 
   gl[0] = 0.5 * (Xb - Xf);
   if (live == 1)
@@ -57,15 +58,17 @@ void compute_dos(double* gl, int N, double P, double K, int live)
       Xf = Xm * X;
       gl[i] = 0.5 * (Xb - Xf);
     }
-  //calculate density of states for live replica energies (if flag is on)
+  /*calculate density of states for live replica energies (if flag is on) */
   if (live == 1)
     {
-      for(i=live;i<(N-1);++i)
+      j=0;
+      for(i=lim;i<(N-1);++i)
 	{
 	  Xb = Xm;
 	  Xm = Xf;
-	  Xf = Xm * (K-i)/(K-i+1);
+	  Xf = Xm * (K-j)/(K-j+1);
 	  gl[i] = 0.5 * (Xb - Xf);
+	  ++j;
 	}
     }
   Xb = Xm;
@@ -77,8 +80,7 @@ void compute_dos(double* gl, int N, double P, double K, int live)
 void compute_dos_imp(double* gl, int N, double P, double K, int live)
 {
   // gl is an array of 0's of size N, K is the number of replicas
-  int i,lim;
-  double X;
+  int i,j,lim;
   double Xm = X_imp(0,K,P); //this is X1
   double Xf, Xb;
   Xb = 2-Xm; // reflecting boundary condition, this is X0
@@ -105,12 +107,14 @@ void compute_dos_imp(double* gl, int N, double P, double K, int live)
   //calculate density of states for live replica energies (if flag is on)
   if (live == 1)
     {
-      for(i=live;i<(N-1);++i)
+      j = 0;
+      for(i=lim;i<(N-1);++i)
 	{
 	  Xb = Xm;
 	  Xm = Xf;
-	  Xf = Xm * (K-i)/(K-i+1);
+	  Xf = Xm * (K-j)/(K-j+1);
 	  gl[i] = 0.5 * (Xb - Xf);
+	  ++j;
 	}
     }
   Xb = Xm;
@@ -119,18 +123,93 @@ void compute_dos_imp(double* gl, int N, double P, double K, int live)
   gl[N-1] =  0.5 * (Xb - Xf);  
 }
 
-void log_weigths(double* El, double* gl, double* wl, int N, double T)
+void compute_dos_log(double* gl, int N, double P, double K, int live)
+{
+  // gl is an array of 0's of size N, K is the number of replicas
+  int i,j,lim;
+  double Xf;
+  double G;
+  double alpha = 1 - P/(K+1);
+  double m, s;
+  //step i =0, m here is Xb
+  m = log(2. - X_imp(0,K,P)); // reflecting boundary condition, this is X0 
+  gl[0] = log(0.5) + m + log(1-X_imp(0,K,P)*X_imp(1,K,P));
+  /*
+  printf("LOG(0.5)%E \n",log(0.5));
+  printf("ximp %E \n",X_imp(0,K,P));
+  printf("m %E \n",m);
+  printf("log(1-X_imp(0,K,P)*X_imp(1,K,P) %E \n",log(1-X_imp(0,K,P)*X_imp(1,K,P)));
+  */
+  //calculate density of states for stored energies, don't do it because of numerical instability
+  //for(i=1;i<(N-K-1);++i) when using live replica
+  
+  if (live == 1)
+    {
+      lim = (N-K-1);
+    }
+  else
+    {
+      lim = (N-1);
+    }
+  for(i=1;i<lim;++i)
+    {
+      s = floor(i/P);
+      G = i - s*P;
+      m += log(X_imp(i-1,K,P));
+      gl[i] = log(0.5) + m + log(1 - (( K - ((int)G%(int)P)) / (K+1-((int)G%(int)P))) * ((K-((int)(G+1)%(int)P)) / (K+1-((int)(G+1)%(int)P)) ) );
+      //printf("gl[%d] is %E \n",i, gl[i]);
+    }
+  //calculate density of states for live replica energies (if flag is on)
+  if (live == 1)
+    {
+      m += log(X_imp(i,K,P));
+      j = 0;
+      for(i=lim;i<(N-1);++i)
+	{
+	  s = floor(i/P);
+	  gl[i] = log(0.5) + m + log(1 - (K-j)/(K-j+1) * (K-(j+1))/(K-(j+1)+1));
+	  m += log((K-j)/(K-j+1));
+	  ++j;
+	}
+      ++i;
+      s = floor(i/P);
+      m -= log((K-(j-1))/(K-(j-1)+1));
+      Xf = -(K-j)/(K-j+1);
+      gl[N-1] = log(0.5) + m + log(1 - (K-j)/(K-j+1) * Xf);
+    }
+  else
+    {
+      ++i;
+      s = floor(i/P);
+      m += log(X_imp(i-1,K,P));
+      G = i - s*P;
+      Xf = - (K-((int)G%(int)P)) / ( K + 1 - ((int)G%(int)P) );
+      gl[N-1] = log(0.5) + m + log(1 - (K-(((int)G%(int)P))/(K+1-((int)G%(int)P))) * Xf);
+    }
+}
+
+void log_weigths(double* El, double* gl, double* wl, int N, double T, int logscale)
 {
   int i;
   double beta = 1/T;
-  for(i=0;i<N;++i)
+  if (logscale == 1)
     {
-      if(gl[i]<0)
+      for(i=0;i<N;++i)
 	{
-	  printf("gl[%d] is %E \n",i, gl[i]);
-	  abort();
+	  wl[i] = gl[i] - beta * El[i];
 	}
-      wl[i] = log(gl[i]) - beta * El[i];
+    }
+  else
+    {
+      for(i=0;i<N;++i)
+	{
+	  if(gl[i]<0)
+	    {
+	      printf("gl[%d] is %E \n",i, gl[i]);
+	      abort();
+	    }
+	  wl[i] = log(gl[i]) - beta * El[i];
+	}
     }
 }
 
@@ -173,7 +252,7 @@ double heat_capacity(double* El, double* wl, int N, double T, double ndof)
 }
 
 //////////////////////////////calculate heat capacity over a set of Ts/////////////////////
-void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, double Tmin, double Tmax, int nT, double ndof)
+void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, double Tmin, double Tmax, int nT, double ndof, int logscale)
 {
   //Cvl is a 0's array of size N (same size as El)
   int i,j;
@@ -183,7 +262,7 @@ void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, 
   
   for(i=0;i<nT;++i)
   {
-    log_weigths(El, gl, wl, N, T);
+    log_weigths(El, gl, wl, N, T, logscale);
     wl_max = max_array(wl,N);
     
     //printf("wl_max %d \n",wl_max);
