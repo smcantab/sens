@@ -134,12 +134,6 @@ void compute_dos_log(double* gl, int N, double P, double K, int live)
   //step i =0, m here is Xb
   m = log(2. - X_imp(0,K,P)); // reflecting boundary condition, this is X0 
   gl[0] = log(0.5) + m + log(1-X_imp(0,K,P)*X_imp(1,K,P));
-  /*
-  printf("LOG(0.5)%E \n",log(0.5));
-  printf("ximp %E \n",X_imp(0,K,P));
-  printf("m %E \n",m);
-  printf("log(1-X_imp(0,K,P)*X_imp(1,K,P) %E \n",log(1-X_imp(0,K,P)*X_imp(1,K,P)));
-  */
   //calculate density of states for stored energies, don't do it because of numerical instability
   //for(i=1;i<(N-K-1);++i) when using live replica
   
