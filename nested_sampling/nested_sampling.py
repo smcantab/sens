@@ -348,7 +348,7 @@ class NestedSampling(object):
         if self.stepsize is None: return
         f = 0.8
         #target_ratio = 0.7
-        max_stepsize = 0.5 # these should to be passed
+        max_stepsize = 0.5 # these should not be passed
         ratio = float(sum(m.naccept for m in mc))/ sum(m.nsteps for m in mc)  
         
         if ratio < self.target_ratio:

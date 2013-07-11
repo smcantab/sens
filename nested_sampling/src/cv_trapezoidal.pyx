@@ -14,6 +14,9 @@ cdef extern:
 
 cdef extern:
     void renorm_energies(double* El, int N, double Emin)
+
+cdef extern:
+    void compute_dos_alpha_log(double* gl, double* rn, int N, double K, int live)
     
 cdef extern: 
     void heat_capacity_loop(double* El, double* gl, double* wl, double* Cvl, int N, double Tmin, double Tmax, int nT, double ndof, int logscale)
@@ -50,3 +53,35 @@ def compute_cv_c(np.ndarray[double, ndim=1, mode="c"] E_list,
     print "logw list",logw_list
     
     return cv_list
+
+def compute_alpha_cv_c(np.ndarray[double, ndim=1, mode="c"] E_list,
+                       np.ndarray[double, ndim=1, mode="c"] rn_list,
+                       double P, double K, double Tmin, double Tmax,
+                       int nT, double ndof, int imp, bool live):
+    cdef double Emin
+    cdef int N
+    cdef int logscale
+    cdef np.ndarray[double, ndim=1, mode="c"] dos_list
+    cdef np.ndarray[double, ndim=1, mode="c"] logw_list
+    cdef np.ndarray[double, ndim=1, mode="c"] cv_list
+    
+    N = np.size(E_list)
+    dos_list = np.zeros(N)
+    logw_list = np.zeros(N)
+    cv_list = np.zeros(nT)
+    
+    logscale = 1
+    ##sample the compression ratios
+        
+    if imp == 0 and logscale == 0:
+        raise ValueError('Method only implemented for improved brkf and log-space')
+    else:
+        compute_dos_alpha_log(<double*>dos_list.data, <double*>rn_list.data, N, K, live)
+    
+    print "dos list",dos_list
+    
+    heat_capacity_loop(<double*>E_list.data,<double*>dos_list.data,<double*>logw_list.data,<double*>cv_list.data, N, Tmin, Tmax, nT, ndof, logscale)
+    
+    print "logw list",logw_list
+    
+    return cv_list, rn_list

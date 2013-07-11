@@ -7,6 +7,7 @@ double X_imp(int i, double K, double P);
 void compute_dos(double* gl, int N, double P, double K, int live);
 void compute_dos_imp(double* gl, int N, double P, double K, int live);
 void compute_dos_log(double* gl, int N, double P, double K, int live);
+void compute_dos_alpha_log(double* gl, double* rn, int N, double K, int live);
 void renorm_energies(double* El, int N, double Emin);
 void log_weigths(double* El, double* gl, double* wl, int N, double T, int logscale);
 double heat_capacity(double* El, double* gl, int N, double T, double ndof);
@@ -128,9 +129,7 @@ void compute_dos_log(double* gl, int N, double P, double K, int live)
   // gl is an array of 0's of size N, K is the number of replicas
   int i,j,lim;
   double Xf;
-  double G;
-  double alpha = 1 - P/(K+1);
-  double m, s;
+  double m;
   //step i =0, m here is Xb
   m = log(2. - X_imp(0,K,P)); // reflecting boundary condition, this is X0 
   gl[0] = log(0.5) + m + log(1-X_imp(0,K,P)*X_imp(1,K,P));
@@ -147,10 +146,8 @@ void compute_dos_log(double* gl, int N, double P, double K, int live)
     }
   for(i=1;i<lim;++i)
     {
-      s = floor(i/P);
-      G = i - s*P;
       m += log(X_imp(i-1,K,P));
-      gl[i] = log(0.5) + m + log(1 - (( K - ((int)G%(int)P)) / (K+1-((int)G%(int)P))) * ((K-((int)(G+1)%(int)P)) / (K+1-((int)(G+1)%(int)P)) ) );
+      gl[i] = log(0.5) + m + log(1 - X_imp(i,K,P) * X_imp(i+1,K,P));
       //printf("gl[%d] is %E \n",i, gl[i]);
     }
   //calculate density of states for live replica energies (if flag is on)
@@ -160,13 +157,11 @@ void compute_dos_log(double* gl, int N, double P, double K, int live)
       j = 0;
       for(i=lim;i<(N-1);++i)
 	{
-	  s = floor(i/P);
 	  gl[i] = log(0.5) + m + log(1 - (K-j)/(K-j+1) * (K-(j+1))/(K-(j+1)+1));
 	  m += log((K-j)/(K-j+1));
 	  ++j;
 	}
       ++i;
-      s = floor(i/P);
       m -= log((K-(j-1))/(K-(j-1)+1));
       Xf = -(K-j)/(K-j+1);
       gl[N-1] = log(0.5) + m + log(1 - (K-j)/(K-j+1) * Xf);
@@ -174,11 +169,58 @@ void compute_dos_log(double* gl, int N, double P, double K, int live)
   else
     {
       ++i;
-      s = floor(i/P);
       m += log(X_imp(i-1,K,P));
-      G = i - s*P;
-      Xf = - (K-((int)G%(int)P)) / ( K + 1 - ((int)G%(int)P) );
-      gl[N-1] = log(0.5) + m + log(1 - (K-(((int)G%(int)P))/(K+1-((int)G%(int)P))) * Xf);
+      Xf = - X_imp(i,K,P);
+      gl[N-1] = log(0.5) + m + log(1 - X_imp(i,K,P) * Xf);
+    }
+}
+
+void compute_dos_alpha_log(double* gl, double* rn, int N, double K, int live)
+{
+  // gl is an array of 0's of size N, K is the number of replicas
+  int i,j,lim;
+  double Xf;
+  double m;
+  //step i =0, m here is Xb
+  m = log(2. - rn[0]); // reflecting boundary condition, this is X0 
+  gl[0] = log(0.5) + m + log(1-rn[0]*rn[1]);
+  //calculate density of states for stored energies, don't do it because of numerical instability
+  //for(i=1;i<(N-K-1);++i) when using live replica
+  
+  if (live == 1)
+    {
+      lim = (N-K-1);
+    }
+  else
+    {
+      lim = (N-1);
+    }
+  for(i=1;i<lim;++i)
+    {
+      m += log(rn[i-1]);
+      gl[i] = log(0.5) + m + log(1 - (rn[i] * rn[i+1]));
+      //printf("gl[%d] is %E \n",i, gl[i]);
+    }
+  //calculate density of states for live replica energies (if flag is on)
+  if (live == 1)
+    {
+      j = 0;
+      for(i=lim;i<(N-1);++i)
+	{
+	  m += log(rn[i-1]);
+	  gl[i] = log(0.5) + m + log(1 - rn[i] * rn[i+1]);
+	  ++j;
+	}
+      ++i;
+      Xf = -rn[i];
+      gl[N-1] = log(0.5) + m + log(1 - rn[i] * Xf);
+    }
+  else
+    {
+      ++i;
+      m += log(rn[i-1]);
+      Xf = - rn[i];
+      gl[N-1] = log(0.5) + m + log(1 - rn[i] * Xf);
     }
 }
 
