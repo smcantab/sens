@@ -73,7 +73,7 @@ def compute_alpha_cv_c(np.ndarray[double, ndim=1, mode="c"] E_list,
     logscale = 1
     ##sample the compression ratios
         
-    if imp == 0 and logscale == 0:
+    if imp == 0 or logscale == 0:
         raise ValueError('Method only implemented for improved brkf and log-space')
     else:
         compute_dos_alpha_log(<double*>dos_list.data, <double*>rn_list.data, N, K, live)
@@ -84,4 +84,4 @@ def compute_alpha_cv_c(np.ndarray[double, ndim=1, mode="c"] E_list,
     
     print "logw list",logw_list
     
-    return cv_list, rn_list
+    return cv_list
