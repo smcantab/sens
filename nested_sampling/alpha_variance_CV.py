@@ -55,9 +55,9 @@ class variance_CV(object):
         CvMom1, CvMom2 = self.Cv_moments(CvSingle)
         print 'Calculating standard deviation'
         sigma = np.sqrt(CvMom2 - np.square(CvMom1))
-        return sigma, CvSingle, CvMom1
         print 'Plotting...'
-        
+        return sigma, CvSingle, CvMom1
+                
     def make_random_alpha_list(self):
         rn_list = np.zeros(self.N)
         if self.live == 0:
