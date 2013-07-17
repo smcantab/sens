@@ -47,11 +47,16 @@ class variance_CV(object):
         #CvMom1 = self.jack_Cv_moments(CvJack)[0]
         #return self.jack_Cv_stdev(CvJack), CvSingle, CvMom1
         
+        print 'Sampling alphas...'
         alpha_sets = self.sample_alphas()
+        print 'Calculating single Cvs'
         CvSingle = self.Cv_singles(alpha_sets)
+        print 'Calculating moments'
         CvMom1, CvMom2 = self.Cv_moments(CvSingle)
+        print 'Calculating standard deviation'
         sigma = np.sqrt(CvMom2 - np.square(CvMom1))
         return sigma, CvSingle, CvMom1
+        print 'Plotting...'
         
     def make_random_alpha_list(self):
         rn_list = np.zeros(self.N)
@@ -117,7 +122,7 @@ class variance_CV(object):
     
     def Cv_moments(self, CvJack):
         """    
-        return Cv expectation value from the Jackknife averages of Cv
+        return Cv expectation value from the Cvs
         """
         CvMom1 = (float(1)/float(self.nsubsets))*np.sum(CvJack,axis=0)               #first moments (1/self.nsubsets)
         CvMom2 = (float(1)/float(self.nsubsets))*np.sum(np.square(CvJack),axis=0)    #second moments
@@ -126,9 +131,9 @@ class variance_CV(object):
     
     def Cv_stdev(self, CvJack):
         """
-        returns the stdev associated with the heat capacity, it calculates the variance of the Jackknife
-        estimate and then from this finds the standard deviation of the heat capacity estimate obtained 
-        from the sample average
+        returns the stdev associated with the heat capacity, it calculates the variance of the estimates
+        and then from this finds the standard deviation of the heat capacity estimate obtained 
+        from the heat capacity average
         """
         CvMom1, CvMom2 = self.Cv_moments(CvJack)
         sigmasquare_jack = CvMom2 - np.square(CvMom1)
