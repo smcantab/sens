@@ -178,13 +178,13 @@ if __name__ == "__main__":
     energies = get_energies(args.fname,1) #always copy in blocks, then depending on B flatten or not
             
     #in the improved brkf we save the energies of the replicas at the live replica but the ln(dos) underflows for these, hence this:
-    if args.live_not_stored == False:
+    if args.live_not_stored == False and args.live is False:
         if len(args.fname) > 1:
             for i in xrange(len(args.fname)):
                     energies[i] = energies[i][:-args.K]
         else:
             energies = energies[:-args.K]
-    else:
+    elif args.live_not_stored == True:
         assert args.live == False,"cannot use live replica under any circumstances if they have not been saved" 
     
     if len(args.fname) > 1:

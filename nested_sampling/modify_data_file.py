@@ -20,12 +20,13 @@ if __name__ == "__main__":
     parser.add_argument("-d", type=float, help="factor by which divide whole column, priority=1",default=1.)
     parser.add_argument("-a", type=float, help="factor by which add whole column, priority=1",default=0.)
     parser.add_argument("-s", type=float, help="factor by which subtract whole column, priority=1",default=0.)
-    parser.add_argument("--di", type=float, help="divide this quantity by the values of the selected column, priority=2",default=None)
+    parser.add_argument("--di", type=float, help="divide this quantity by the values of the selected column, priority=2",default=0)
     parser.add_argument("--log", action="store_true", help="take natural log of selected column, priority=3",default=False)
     parser.add_argument("--exp", action="store_true", help="take exp of selected column, priority=4",default=False)
     args = parser.parse_args()
     
     fname = args.fname
+    print fname
     
     column = args.column
     add = args.a
@@ -53,12 +54,12 @@ if __name__ == "__main__":
     if args.column is not None:
         for data in all_data:
             data[:][column] = (data[:][column] + add - subtract) * multiply / divide
-        if inv_divide is not None:
-            data[:][column] = inv_divide / data[:][column]
-        if flog is True:
-            data[:][column] = np.log(data[:][column])
-        if fexp is True:
-            data[:][column] = np.exp(data[:][column])
+            if inv_divide is not 0:
+                data[:][column] = inv_divide / data[:][column]
+            if flog is True:
+                data[:][column] = np.log(data[:][column])
+            if fexp is True:
+                data[:][column] = np.exp(data[:][column])
     
     for data, name in zip(all_data, all_labels):
         np.savetxt('{n}_modified.dat'.format(n=name),data)

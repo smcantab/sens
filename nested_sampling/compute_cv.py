@@ -147,9 +147,9 @@ if __name__ == "__main__":
     T = np.array([Tmin + dT*i for i in range(nT)])
     
     #in the improved brkf we save the energies of the replicas at the live replica but the ln(dos) underflows for these, hence this:
-    if args.live_not_stored == False:
+    if args.live_not_stored == False and args.live is False:
             energies = energies[:-args.K]
-    else:
+    elif args.live_not_stored == True:
         assert args.live == False,"cannot use live replica under any circumstances if they have not been saved" 
     
     #make nd-arrays C contiguous 

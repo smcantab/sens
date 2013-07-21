@@ -41,12 +41,14 @@ if __name__ == "__main__":
     parser.add_argument("--legloc", type=int, help="define location of the legend (default upper right 1):"
                         " \"upper right=1\" \"upper left=2\" \"lower left=3\" \"lower right=4\" \"right=5\" "
                         "\"center left=6\" \"center right=7\" \"lower center=8\" \"upper center=9\" \"center=10\"",default=1)
-    parser.add_argument("--xlabel", type=str, help="set x-label",default="T")
-    parser.add_argument("--ylabel", type=str, help="set y-label",default="Cv")
+    parser.add_argument("--xlabel", type=str, help="set x-label",default='T')
+    parser.add_argument("--ylabel", type=str, help="set y-label",default='Cv')    
     parser.add_argument("--xtop", type=float, help="set x-axis top",default=None)
     parser.add_argument("--xbot", type=float, help="set x-axis bottom",default=None)
     parser.add_argument("--ytop", type=float, help="set y-axis top",default=None)
     parser.add_argument("--ybot", type=float, help="set y-axis bottom",default=None)
+    parser.add_argument("--xpow", type=float, help="set x-axis power limit for notation",default=None)
+    parser.add_argument("--ypow", type=float, help="set y-axis power limit for notation",default=None)
     parser.add_argument("--title", type=str, help="set title",default=None)
     parser.add_argument("--linewidth", type=float, help="set line width (default 1.8)",default=1.8)
     parser.add_argument("--colormap", type=str, help="set colormap (default Dark2)",default='Dark2')
@@ -87,6 +89,8 @@ if __name__ == "__main__":
     absinvgrad = args.absinvgrad
     xlog = args.xlog
     ylog= args.ylog
+    xpowlimit = args.xpow
+    ypowlimit = args.ypow
     
     #####################LINE STYLE CYCLER####################
     if slines is False:
@@ -175,11 +179,15 @@ if __name__ == "__main__":
     ax.set_ylabel(ylabel)
     ax.set_xlim((xbot,xtop))
     ax.set_ylim((ybot,ytop))
-    
+        
     if xlog is True: 
-        ax.set_xscale('log')
+        ax.set_xscale('symlog')
+    elif xpowlimit is not None:
+        ax.get_xaxis().get_major_formatter().set_powerlimits((0,xpowlimit))
     if ylog is True:
-        ax.set_yscale('log')
+        ax.set_yscale('symlog')
+    elif ypowlimit is not None:
+        ax.get_yaxis().get_major_formatter().set_powerlimits((0,ypowlimit))
     if grid is True:
         ax.grid(True,linestyle='--',color='0.75')
     if title is not None:

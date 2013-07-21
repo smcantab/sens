@@ -173,13 +173,13 @@ if __name__ == "__main__":
     #deal with input
     energies = get_energies(args.fname,0) #always flattens the input
             
-    if args.live_not_stored == False:
+    if args.live_not_stored == False and args.live == False:
         if len(args.fname) > 1:
             for i in xrange(len(args.fname)):
                     energies[i] = energies[i][:-args.K]
         else:
             energies = energies[:-args.K]
-    else:
+    elif args.live_not_stored == True:
         assert args.live == False,"cannot use live replica under any circumstances if they have not been saved" 
     
     #make nd-arrays C contiguous 
