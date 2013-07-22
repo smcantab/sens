@@ -48,19 +48,18 @@ if __name__ == "__main__":
         #data = np.hstack((data, np.zeros((data.shape[0], 1), dtype=data.dtype)))
         data = np.array(data)
         all_data[i] = data
-    if inv_divide is not None:
-        data[:][column] = inv_divide / data[:][column]
-    if flog is True:
-        data[:][column] = np.log(data[:][column])
-    if fexp is True:
-        data[:][column] = np.exp(data[:][column])
- 
+     
     all_data = np.array(all_data)
     
     if args.column is not None:
         for data in all_data:
             data[:][column] = (data[:][column] + add - subtract) * multiply / divide
-    
+        if inv_divide != 0:
+            data[:,column] = inv_divide / data[:,column]
+        if flog is True:
+            data[:,column] = np.log(data[:,column])
+        if fexp is True:
+            data[:,column] = np.exp(data[:,column])
     for data, name in zip(all_data, all_labels):
         np.savetxt('{n}_modified.dat'.format(n=name),data)
    
