@@ -2,7 +2,7 @@ import argparse
 import numpy as np
 from scipy.stats import beta
 
-def run_hparticle_ea(K,ndof,P,E_init=1000,E_fin=0.000001,ranerr=False):
+def run_hparticle_ea(K,ndof,P,E_init=1000,E_fin=.00000000000001,ranerr=False):
     """
     generates a list of energies analytically for the harmonic oscillator provided an initial energy
     and a final energy
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     parser.add_argument("ndof", type=int, help="number of degrees of freedom")
     parser.add_argument("-P", type=int, help="number of cores for parallel run", default=1)
     parser.add_argument("--Einit", type=int, help="initial energy (default=1000)", default=1000)
-    parser.add_argument("--Efin", type=int, help="initial energy (default=1E-8)", default=.00000001)
+    parser.add_argument("--Efin", type=int, help="initial energy (default=1E-8)", default=.00000000000001)
     parser.add_argument("--ranerr", action='store_true', help="random error flag (default False)", default=False)
     args = parser.parse_args()
     print args

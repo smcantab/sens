@@ -169,7 +169,9 @@ if __name__ == "__main__":
     for data, label, i in zip(all_data, all_labels, xrange(np.shape(all_data)[0])): 
             if np.shape(data)[1] is 2 or ebar is False:
                 ax.plot(data[:,0], data[:,1], ls=next(linecycler), label = label, linewidth=linew)
-            if np.shape(data)[1] is 3 and ebar is True:
+            elif np.shape(data)[1] is 3 and data[:,2].all() == 0:
+                ax.plot(data[:,0], data[:,1], ls=next(linecycler), label = label, linewidth=linew)
+            else: #np.shape(data)[1] is 3 and ebar is True:
                 (line, caps, _) = ax.errorbar(data[:,0], data[:,1], yerr=data[:,2], ls=next(linecycler), ecolor=errcolor, capsize=ecap, label = label, linewidth=linew)
                 colour = line.get_color()
                 for cap in caps:
@@ -179,9 +181,10 @@ if __name__ == "__main__":
     ax.set_ylabel(ylabel)
     ax.set_xlim((xbot,xtop))
     ax.set_ylim((ybot,ytop))
-        
+    ax.axhline(y=3)
+    
     if xlog is True: 
-        ax.set_xscale('symlog')
+        ax.set_xscale('log')
     elif xpowlimit is not None:
         ax.get_xaxis().get_major_formatter().set_powerlimits((0,xpowlimit))
     if ylog is True:
