@@ -181,7 +181,9 @@ if __name__ == "__main__":
     ax.set_ylabel(ylabel)
     ax.set_xlim((xbot,xtop))
     ax.set_ylim((ybot,ytop))
-    ax.axhline(y=3)
+    #ax.axhline(y=3)
+    ax.invert_xaxis()
+    
     
     if xlog is True: 
         ax.set_xscale('log')
