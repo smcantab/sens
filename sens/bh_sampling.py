@@ -9,7 +9,7 @@ from scipy.misc import factorial
 
 from database_eigenvecs import HessianEigs
 from nested_sampling import NestedSampling, Replica
-from src.weighted_pick import weighted_pick_cython
+from sens.src.weighted_pick import weighted_pick_cython
 
 from pele.utils.rotations import vec_random_ndim
 from pele.utils.hessian import sort_eigs, get_eig
@@ -252,7 +252,7 @@ def get_thermodynamic_information(system, db):
     db.session.commit()
     return db
 
-class BHSampler(object):
+class SENSSampler(object):
     """this class will manage the sampling of configurations from a database of minima
     
     in particular it will precompute values so they need not be recalculated every time
@@ -414,7 +414,7 @@ class BHSampler(object):
 class ConfigTestError(StandardError):
     pass
 
-class NestedSamplingBS(NestedSampling):
+class NestedSamplingSA(NestedSampling):
     """overload get_starting_configuration() in order to introduce sampling from known minima
     
     Parameters
@@ -427,9 +427,9 @@ class NestedSamplingBS(NestedSampling):
     minima : list of Minimum objects
     """
     def __init__(self, system, nreplicas, mc_runner, minima, minprob=None, **kwargs):
-        super(NestedSamplingBS, self).__init__(system, nreplicas, mc_runner, **kwargs)
+        super(NestedSamplingSA, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.minima = minima
-        self.bh_sampler = BHSampler(self.minima, self.system.k)
+        self.bh_sampler = SENSSampler(self.minima, self.system.k)
         if minprob is None:
             raise ValueError("minprob cannot be None")
         self.minprob = minprob

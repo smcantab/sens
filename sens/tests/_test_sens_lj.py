@@ -1,11 +1,12 @@
 import unittest
 import numpy as np
 
-from nested_sampling import NestedSampling
+from sens.bh_sampling import NestedSamplingSA
+from sens.models._lj_tools import LJClusterSENS
 
-from sens.models._lj_tools import LJClusterSENS, LJMonteCarloCompiled
+from _test_ns_lj import TestNS_LJ
 
-class TestNS(unittest.TestCase):
+class TestSENS_LJ(TestNS_LJ):
     def setUp(self):
         self.setUp1()
 
@@ -17,10 +18,14 @@ class TestNS(unittest.TestCase):
         self.stepsize = 0.01
         self.nproc = nproc
         
+        self.database = self.system.create_database("lj13.db")
+        self.minima = self.database.minima()
+        
         self.mc_runner = self.system.get_mc_walker(mciter=100)
 
-        self.ns = NestedSampling(self.system, self.nreplicas, self.mc_runner, 
-                                 stepsize=0.1, nproc=nproc, verbose=True)
+        self.ns = NestedSamplingSA(self.system, self.nreplicas, self.mc_runner,
+                                   minima=self.minima, minprob=0.1,
+                                   stepsize=0.1, nproc=nproc, verbose=True)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
@@ -39,7 +44,7 @@ class TestNS(unittest.TestCase):
         self.assert_(self.ns.stepsize != self.stepsize)
         self.assertEqual(len(self.ns.max_energies), self.niter * self.nproc)
 
-class testNSPar(TestNS):
+class testSENS_LJ_Par(TestSENS_LJ):
     def setUp(self):
         self.setUp1(nproc=3)
     
