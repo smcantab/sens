@@ -9,42 +9,6 @@ from sqlalchemy import Column, Integer, Float, PickleType, ForeignKey
 from pele.storage.database import Base
 from pele.storage import Database
 
-class NormalModes(Base):
-    """normal mode frequencies and associated eigenvectors
-    
-    actually frequencies are stored rather than eigenvalues.  Frequencies are
-    eigenvalues with the appropriate weighting for (from the mass or from rigid bodies)
-    
-    Parameters
-    ----------
-    m : Minimum object
-    freq : array
-        the list of normal mode frequencies
-    vectors : 2-d numpy array
-        vectors[:,i] is the eigenvector associated to the normal mode frequency freq[i].
-        the eigenvectors should be orthogonal and normalized
-    nzero : integer, optional
-        the number of zero frequencies (from global symmetries).  Default 0
-    nnegative : integer, optional
-        the number of negative frequencies (e.g. at a saddle point).  Default 0
-    """
-    __tablename__ = "tbl_normal_modes"
-
-    freq = deferred(Column(PickleType))
-    vectors = deferred(Column(PickleType))
-    nzero = Column(Integer)
-    nnegative = Column(Integer)
-
-    _minimum_id = Column(Integer, ForeignKey('tbl_minima._id'), primary_key=True)
-    minimum = relationship("Minimum",
-                            primaryjoin="Minimum._id==NormalModes._minimum_id",
-                            backref='normal_modes', uselist=False)
-    def __init__(self, m, freq, vectors, nzero=0, nnegative=0):
-        self.minimum = m
-        self.freq = freq
-        self.vectors = np.copy(vectors)
-        self.nzero = nzero
-        self.nnegative = nnegative
 
 class HessianEigs(Base):
     """hessian eigenvalues and associated eigenvectors
