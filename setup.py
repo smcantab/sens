@@ -22,20 +22,20 @@ setup(
     #cmdclass = {'build_ext': build_ext},
     ext_modules = 
         [
-            Extension("weighted_pick", ["weighted_pick.c"],
+            Extension("sens.src.weighted_pick", ["sens/src/weighted_pick.c"],
                       extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3']                
                        ),
-            Extension("runmc", ["runmc.c", "mc.c", "lj.c"],
+            Extension("sens.src.runmc", ["sens/src/runmc.c", "sens/src/mc.c", "sens/src/lj.c"],
                       include_dirs=gslpy_include,
                       extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3'],
                       libraries=['gsl', 'gslcblas', 'm']
                         ),
-            Extension("run_ising_mc", ["run_ising_mc.c", "mcising.c"],
+            Extension("sens.src.run_ising_mc", ["sens/src/run_ising_mc.c", "sens/src/mcising.c"],
                       include_dirs=gslpy_include,
                       extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3',],
                       libraries=['gsl', 'gslcblas', 'm']
                         ), 
-            Extension("cv_trapezoidal", ["cv_trapezoidal.c", "cv.c", "lj.c"],
+            Extension("sens.src.cv_trapezoidal", ["sens/src/cv_trapezoidal.c", "sens/src/cv.c", "sens/src/lj.c"],
                       include_dirs=gslpy_include,
                       extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3',],
                       libraries=['gsl', 'gslcblas', 'm']
