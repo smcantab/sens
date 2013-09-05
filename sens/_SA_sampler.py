@@ -277,7 +277,7 @@ class SASampler(object):
         
         return m.coords + dx
     
-    def compute_weights(self, Emax):
+    def _compute_weights(self, Emax):
         """compute weights of minima from phase space volumes up to energy Emax  
         
         Notes
@@ -308,6 +308,17 @@ class SASampler(object):
         weights = np.exp(lweights - np.max(lweights))
         return minima2, weights
     
+    def compute_weights(self, Emax):
+        if not hasattr(self, "_weights_Emax"):
+            self._weights_Emax = None
+        if self._weights_Emax == Emax:
+            return self._weights_minima, self._weights
+        else:
+            self._weights_Emax = Emax
+            self._weights_minima, self._weights = self._compute_weights(Emax)
+            return self._weights_minima, self._weights
+            
+            
     def compute_weights_slow(self, Emax):
         """compute weights from phase space volumes
         
