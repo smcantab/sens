@@ -3,19 +3,10 @@ routines for using low energy minima found using basinhopping to
 improve sampling in "nested sampling" at low energies
 """
 import numpy as np
-import random
-from scipy.special import gamma, gammaln
-from scipy.misc import factorial
-
-
-from pele.utils.rotations import vec_random_ndim
-from pele.utils.hessian import sort_eigs, get_eig
-from pele.thermodynamics import logproduct_freq2, normalmodes
 
 from nested_sampling import NestedSampling, Replica
 
-from sens.database_eigenvecs import HessianEigs
-from sens._SA_sampler import SASampler
+from sens import SASampler
 
 
 

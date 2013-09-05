@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from sens.bh_sampling import NestedSamplingSA
+from sens import NestedSamplingSA
 
 import _test_ns_lj
 

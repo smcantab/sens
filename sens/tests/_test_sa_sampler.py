@@ -3,7 +3,7 @@ import unittest
 from pele.systems import LJCluster
 from pele.thermodynamics import get_thermodynamic_information
 
-from sens._SA_sampler import SASampler
+from sens import SASampler
 
 class TestBuildDatabase(unittest.TestCase):
     def setUp(self):
