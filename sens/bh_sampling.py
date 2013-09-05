@@ -426,13 +426,21 @@ class NestedSamplingSA(NestedSampling):
         object to do the step taking.  must be callable and have attribute takestep.stepsize
     minima : list of Minimum objects
     """
-    def __init__(self, system, nreplicas, mc_runner, minima, minprob=None, **kwargs):
+    def __init__(self, system, nreplicas, mc_runner, minima, 
+                  minprob=None, energy_offset=None,
+                  **kwargs):
         super(NestedSamplingSA, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.minima = minima
         self.bh_sampler = SENSSampler(self.minima, self.system.k)
         if minprob is None:
             raise ValueError("minprob cannot be None")
         self.minprob = minprob
+        if energy_offset is None:
+            self.energy_offset = 2.5
+        else:
+            self.energy_offset = energy_offset
+        
+        self.count_sampled_minima = 0
         
     def get_starting_configuration_minima_HA(self, Emax):
         """using the Harmonic Approximation sample a new configuration starting from a minimum sampled uniformly according to phase space volume
@@ -472,39 +480,53 @@ class NestedSamplingSA(NestedSampling):
         passes
 
         """
+        self.count_sampled_minima += 1
         while True:
             try:
                 return self.get_starting_configuration_minima_single(Emax)
             except ConfigTestError:
                 pass
 
-    def onset_prob_func(self, a, b, c, Emax):
-        dE = float(self.minima[-1].energy) - Emax
-        f = b * (dE + c)
+    def onset_prob_func(self, Emax):
+        """return the probability of sampling from a minimum
+        
+        The probability depends on Emax. For high Emax the probability is 0.  the probability
+        increases as Emax get's lower, reaching a maximum of self.minprob.  
+
+        value of Emax where the probabilty starts to get large is energy_max_database + energy_offset where
+        energy_max_database is the maximum energy minimum in the database.  This behavior
+        can be adjusted with parameter energy_offset.
+        
+        parameter b determines the speed at which it turns on.
+        
+        """
+        if not hasattr(self, "_energy_max_database"):
+            self._energy_max_database = float(max([m.energy for m in self.minima]))
+        max_prob = float(self.minprob)
+        energy_onset_width = 1.
+        dE = self._energy_max_database + self.energy_offset - Emax
+        f = dE / energy_onset_width
         if f > 100:
-            onset_prob = 0
+            onset_prob = 0.
         else:
-            onset_prob = a / ( 1. + np.exp(-f))
+            onset_prob = max_prob / ( 1. + np.exp(-f))
         return onset_prob
     
-    def get_starting_configuration(self, Emax):
+    def get_starting_configurations(self, Emax):
         """this function overloads the function in NestedSampling"""
         # choose a replica randomly
-        rtuple = self.get_starting_configuration_from_replicas()
-        configs = rtuple[0]
+        configs = self.get_starting_configurations_from_replicas()
         # replace each starting configuration with a one chosen
         # from the minima with probability prob
-        a = float(self.minprob)
-        b = 1.
-        c = 2.5
-        onset_prob = self.onset_prob_func(a, b, c, Emax)
+        onset_prob = self.onset_prob_func(Emax)
         prob = onset_prob / float(self.nreplicas)
         for i in range(len(configs)):
             if np.random.uniform(0,1) < prob:
                 x, energy = self.get_starting_configuration_minima(Emax)
-                configs[i] = Replica(x, energy, from_random=False) 
-                print "sampling from minima, E minimum:", energy, "with probability:", prob
-        return configs, rtuple[1]
+                configs[i] = Replica(x, energy, from_random=False)
+                if self.verbose:
+                    print "sampling from minima, E minimum:", energy, "with probability:", prob
+        return configs
 
 if __name__ == "__main__":
     # define the system
