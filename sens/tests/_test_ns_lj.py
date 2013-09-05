@@ -8,11 +8,14 @@ from sens.models._lj_tools import LJClusterSENS
 class TestNS_LJ(unittest.TestCase):
     def setUp(self):
         self.setUp1()
-
-    def setUp1(self, nproc=1):
+    
+    def set_up_system(self):
         self.natoms = 13
         self.gmin = -44.3269
         self.system = LJClusterSENS(self.natoms, 2.5)
+
+    def setUp1(self, nproc=1):
+        self.set_up_system()
         self.nreplicas = 10
         self.stepsize = 0.01
         self.nproc = nproc

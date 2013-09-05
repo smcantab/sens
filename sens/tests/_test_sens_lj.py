@@ -4,16 +4,16 @@ import numpy as np
 from sens.bh_sampling import NestedSamplingSA
 from sens.models._lj_tools import LJClusterSENS
 
-from _test_ns_lj import TestNS_LJ
+import _test_ns_lj
 
-class TestSENS_LJ(TestNS_LJ):
+class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.setUp1()
 
+        
+
     def setUp1(self, nproc=1):
-        self.natoms = 13
-        self.gmin = -44.3269
-        self.system = LJClusterSENS(self.natoms, 2.5)
+        self.set_up_system()
         self.nreplicas = 10
         self.stepsize = 0.01
         self.nproc = nproc
