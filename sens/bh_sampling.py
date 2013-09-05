@@ -127,26 +127,6 @@ def compute_log_phase_space_volume(m, Emax, k):
     logV = log(2) + gammaln(N+1) + k * log(Emax - m.energy) - gammaln(k+1) - m.fvib/2. - log(m.pgorder)
     return logV
 
-def weighted_pick(weights):
-    """sample uniformly from the objects with given weights
-    
-    returns the selected index
-    
-    Parameters
-    ----------
-    
-    weights : array of floats
-        weight associated to each minimum, proportional to the volume of the basin
-    """
-    if len(weights) == 0:
-        raise ValueError("weights must not have zero length")
-    r = np.random.uniform(0., sum(weights))
-    s = 0.0
-#    print r, len(weights)    
-    for i in range(len(weights)):
-        s += weights[i]
-        if r < s: return i
-    return len(weights) - 1
 
 def sample_minimum(minima, Emax, k):
     """return a minimum sampled uniformly with weight according to phase space volume

@@ -11,7 +11,7 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
 
     def setUp1(self, nproc=1):
         self.set_up_system()
-        self.nreplicas = 20
+        self.nreplicas = 10
         self.stepsize = 0.01
         self.nproc = nproc
         
@@ -27,7 +27,7 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
         
         self.Emax0 = self.ns.replicas[-1].energy
         
-        self.niter = 1000
+        self.niter = 100
         for i in xrange(self.niter):
             self.ns.one_iteration()
         self.Emax = self.ns.replicas[-1].energy

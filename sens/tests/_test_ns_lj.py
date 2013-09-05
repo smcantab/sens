@@ -23,7 +23,7 @@ class TestNS_LJ(unittest.TestCase):
         self.mc_runner = self.system.get_mc_walker(mciter=100)
 
         self.ns = NestedSampling(self.system, self.nreplicas, self.mc_runner, 
-                                 stepsize=0.1, nproc=nproc, verbose=True)
+                                 stepsize=0.1, nproc=nproc, verbose=False)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
