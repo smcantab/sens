@@ -346,3 +346,25 @@ class SASampler(object):
         index = weighted_pick_cython(weights)
         m = minima2[index]
         return m
+    
+    def sample_coords(self, Emax):
+        m = self.sample_minimum(Emax)
+        coords = self.sample_coords_from_basin(m, Emax)
+        return m, coords
+    
+    def compute_energy(self, x, x0, m):
+        dx = x - x0
+        nm = m.normal_modes
+        freqs = nm.freqs
+        vectors = nm.vectors
+        nzero = freqs.size - self.k
+        
+        energy = sum([0.5 * freqs[i] * np.dot(dx, vectors[:,i])**2 
+                      for i in xrange(nzero, freqs.size)])
+        
+        energy += m.energy
+        
+        return energy
+            
+            
+
