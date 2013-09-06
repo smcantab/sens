@@ -36,8 +36,8 @@ class LJClusterSENS(LJCluster):
 #    def get_metric_tensor(self):
 #        return None
     
-    def get_pgorder(self):
-        return PointGroupOrderCluster(self.get_compare_exact())
+#    def get_pgorder(self):
+#        return PointGroupOrderCluster(self.get_compare_exact())
     
     def get_config_tests(self):
         return [SphericalContainerWraper(self.radius, nocenter=True)]

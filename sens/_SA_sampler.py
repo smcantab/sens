@@ -254,9 +254,9 @@ class SASampler(object):
         in real system, even ones that fit quite well to the harmonic approximation this very often generates 
         configurations with energy greater than Emax.  
         """
-        nm = m.hessian_eigs[0]
-        evals = nm.eigenvalues
-        vectors = nm.eigenvectors
+        nm = m.normal_modes
+        evals = nm.freqs
+        vectors = nm.vectors
         k = self.k
         nzero = len(evals) - k
     

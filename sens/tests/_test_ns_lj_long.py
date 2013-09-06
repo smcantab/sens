@@ -23,16 +23,17 @@ class TestNS_LJ_Long(_test_ns_lj.TestNS_LJ):
         
         self.Emax0 = self.ns.replicas[-1].energy
         
-        max_iter = 10000
-        self.Etol = .01
-        for i in xrange(max_iter):
-            self.ns.one_iteration()
-            deltaE = self.ns.replicas[-1].energy - self.ns.replicas[0].energy
-            if  deltaE < self.Etol:
-                break
-        self.niter = i + 1
-        self.Emax = self.ns.replicas[-1].energy
-        self.Emin = self.ns.replicas[0].energy
+        self.run_ns(max_iter=10000, Etol=.01)
+#        max_iter = 10000
+#        self.Etol = .01
+#        for i in xrange(max_iter):
+#            self.ns.one_iteration()
+#            deltaE = self.ns.replicas[-1].energy - self.ns.replicas[0].energy
+#            if  deltaE < self.Etol:
+#                break
+#        self.niter = i + 1
+#        self.Emax = self.ns.replicas[-1].energy
+#        self.Emin = self.ns.replicas[0].energy
     
 
     def test1(self):

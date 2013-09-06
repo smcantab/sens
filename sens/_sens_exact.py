@@ -65,21 +65,30 @@ class NestedSamplingSAExact(NestedSampling):
     minima : list of Minimum objects
     """
     def __init__(self, system, nreplicas, mc_runner, 
-                  minima, energy_accuracy, compare_minima=None,
+                  minima, energy_accuracy, compare_minima=None, mindist=None,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.minima = minima
+        if self.verbose:
+            self._check_minima()
         self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
+        self.mindist = mindist
         
         self.sa_sampler = SASampler(self.minima, self.system.k)
         
 
-        self.pot = self.system.get_potential()
         self.minimizer = self.system.get_minimizer()
         
         self.count_sampled_minima = 0
+        
 
 
+    def _check_minima(self):
+        for m in self.minima:
+            assert m.energy is not None
+            assert m.fvib is not None
+            assert m.pgorder is not None
+            assert m.normal_modes is not None
 
     def _compute_energy_in_SA(self, replica):
         # quench to nearest minimum
@@ -90,29 +99,47 @@ class NestedSamplingSAExact(NestedSampling):
         if m is None:
             return None
         
+        # put the two structures in best alignment.
+        # e.g. account for trivial tranlational and rotational degrees of freedom
+        x, x0 = replica.x.copy(), qresult.coords.copy()
+        if self.mindist is not None:
+            dist, x, x0 = self.mindist(x, x0)
         
+        energy = self.sa_sampler.compute_energy(x, x0, m)
         
-        pass
+        return energy
 
     def _attempt_swap(self, replica, Emax):
+        # sample a configuration from the harmonic superposition approximation
         m, xsampled = self.sa_sampler.sample_coords(Emax)
-        Esampled = self.pot.get_energy(xsampled)
         
+        # if the energy returned by full energy function is too high, then reject the swap
+        Esampled = self.system.get_energy(xsampled)
         if Esampled >= Emax:
-            # no swap done
             return replica
         
+        # compute the energy of the replica within the superposition approximation.
         E_SA = self._compute_energy_in_SA(replica)
         
-        if E_SA >= Emax:
+        # reject if the energy is too high
+        if E_SA is None or E_SA >= Emax:
             # no swap done
             return replica
+
+        print "accepting swap"
+        self.count_sampled_minima += 1
         
         return Replica(xsampled, Esampled, from_random=True)
         
 
     def do_monte_carlo_chain(self, replicas, Emax):
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
+        
+        print "attempting swaps"
+        for i, r in enumerate(replicas):
+            rnew = self._attempt_swap(r, Emax)
+            if rnew is not None:
+                replicas[i] = rnew
         
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         

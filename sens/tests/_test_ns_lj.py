@@ -42,6 +42,21 @@ class TestNS_LJ(unittest.TestCase):
         self.assert_(self.ns.stepsize != self.stepsize)
         self.assertEqual(len(self.ns.max_energies), self.niter * self.nproc)
 
+    def run_ns(self, max_iter=100, Etol=1e-4):
+#        max_iter = 10000
+#        self.Etol = .01
+        self.Etol = Etol
+        print max_iter
+        for i in xrange(int(max_iter)):
+            self.ns.one_iteration()
+            deltaE = self.ns.replicas[-1].energy - self.ns.replicas[0].energy
+            if  deltaE < self.Etol:
+                break
+        self.niter = i + 1
+        self.Emax = self.ns.replicas[-1].energy
+        self.Emin = self.ns.replicas[0].energy
+
+
 class testNSPar(TestNS_LJ):
     def setUp(self):
         self.setUp1(nproc=3)
