@@ -93,7 +93,7 @@ class NestedSamplingSAExact(NestedSampling):
     """
     def __init__(self, system, nreplicas, mc_runner, 
                   minima, energy_accuracy, compare_minima=None, mindist=None,
-                  copy_minima=True, config_tests=None,
+                  copy_minima=True, config_tests=None, minimizer=None,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         if copy_minima:
@@ -103,27 +103,33 @@ class NestedSamplingSAExact(NestedSampling):
         if self.verbose:
             self._check_minima()
         
+        self.compare_minima = compare_minima
         if compare_minima is None:
             try:
                 self.compare_minima = self.system.get_compare_minima()
             except NotImplementedError or AttributeError:
-                self.compare_minima = None
+                pass
         
+        self.mindist = mindist
         if mindist is None:
             try:
                 self.mindist = self.system.get_mindist()
             except NotImplementedError or AttributeError:
-                self.mindist = None
+                pass
 
+        self.config_tests = config_tests
         if config_tests is None:
             try:
                 self.config_tests = self.system.get_config_tests()
             except NotImplementedError or AttributeError:
-                self.config_tests = None
+                pass
+
+        self.minimizer = minimizer
+        if self.minimizer is None:
+            self.minimizer = self.system.get_minimizer()
         
         self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
         self.sa_sampler = SASampler(self.minima, self.system.k)
-        self.minimizer = self.system.get_minimizer()
 
         
         self.count_sampled_minima = 0

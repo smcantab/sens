@@ -25,7 +25,7 @@ def main():
         # build the database    
         database = system.create_database(args.db, createdb=True)
         bh = system.get_basinhopping(database)
-        bh.run(100)
+        bh.run(1000)
         
     
     else:

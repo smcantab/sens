@@ -35,7 +35,6 @@ def main():
         else:
             minima = database.minima()[:args.nminima]
 
-
     
     
     mcrunner = system.get_mc_walker(args.mciter)
@@ -46,12 +45,14 @@ def main():
         
         ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner,
                                    minima, energy_accuracy,
+                                   mindist=system.get_mindist(niter=1),
+                                   minimizer=system.get_minimizer(tol=1e-4),
                                    **nskwargs)
     else:
         ns = NestedSampling(system, args.nreplicas, mcrunner, 
                             **nskwargs)
     
-    run_nested_sampling(ns, label="lj"+str(args.natoms), etol=1e-3)
+    run_nested_sampling(ns, label="lj"+str(args.natoms), etol=1e-2)
     
 
 if __name__ == "__main__":
