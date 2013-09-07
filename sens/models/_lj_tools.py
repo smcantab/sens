@@ -9,10 +9,7 @@ from pele.optimize import Result
 
 from nested_sampling.utils.rotations import vector_random_uniform_hypersphere
 
-try:
-    from sens.src.runmc import mc_cython as lj_mc_cython
-except ImportError:
-    print "warning, can't import compiled mc"
+from sens.src.runmc import mc_cython as lj_mc_cython
 
 
 class SphericalContainerWraper(SphericalContainer):

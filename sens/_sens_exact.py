@@ -96,22 +96,38 @@ class NestedSamplingSAExact(NestedSampling):
                   copy_minima=True, config_tests=None,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
-        self.minima = minima
+        if copy_minima:
+            self.minima = [_UnboundMinimum(m) for m in minima]
+        else:
+            self.minima = minima
         if self.verbose:
             self._check_minima()
-        self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
-        self.mindist = mindist
-        self.config_tests = config_tests
         
-        self.sa_sampler = SASampler(self.minima, self.system.k)
+        if compare_minima is None:
+            try:
+                self.compare_minima = self.system.get_compare_minima()
+            except NotImplementedError or AttributeError:
+                self.compare_minima = None
         
+        if mindist is None:
+            try:
+                self.mindist = self.system.get_mindist()
+            except NotImplementedError or AttributeError:
+                self.mindist = None
 
+        if config_tests is None:
+            try:
+                self.config_tests = self.system.get_config_tests()
+            except NotImplementedError or AttributeError:
+                self.config_tests = None
+        
+        self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
+        self.sa_sampler = SASampler(self.minima, self.system.k)
         self.minimizer = self.system.get_minimizer()
+
         
         self.count_sampled_minima = 0
         
-        if copy_minima:
-            self.minima = [_UnboundMinimum(m) for m in minima]
                 
         
         
