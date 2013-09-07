@@ -3,6 +3,7 @@ import numpy as np
 
 from pele.thermodynamics import get_thermodynamic_information
 
+
 from sens._sens_exact import NestedSamplingSAExact
 from sens import get_all_normalmodes
 from sens.models._lj_tools import LJClusterSENS
@@ -17,6 +18,7 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
         self.natoms = 6
         self.gmin = -12.7121
         self.system = LJClusterSENS(self.natoms, 2.5)
+        self.ndof = 3*self.natoms - 6
 
 
     def setUp1(self, nproc=1):
@@ -46,15 +48,27 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
                                    compare_minima=self.system.get_compare_minima(), 
                                    mindist=self.system.get_mindist(),
                                    config_tests = self.system.get_config_tests(),
-                                   stepsize=0.1, nproc=nproc, verbose=True)
+                                   stepsize=0.1, nproc=nproc, verbose=False)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
         self.run_ns(max_iter=1000, Etol=.01)
     
-#    def test2(self):
-#        self.assertGreater(self.ns.count_sampled_minima, 0)
+
     
+    def test1(self):
+        super(TestSENS_LJ, self).test1()
+        self.assertGreater(self.ns.count_sampled_minima, 0)
+        
+#        T, cv = self.compute_cv()
+#        import matplotlib.pyplot as plt
+##        plt.plot(cv)
+#        print cv.shape
+#        plt.plot(T, cv)
+#        plt.show()
+        
+        
+        
 
 #class testSENS_LJ_Par(TestSENS_LJ):
 #    def setUp(self):

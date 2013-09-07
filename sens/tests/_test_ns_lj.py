@@ -2,17 +2,26 @@ import unittest
 import numpy as np
 
 from nested_sampling import NestedSampling
+from nested_sampling.src.cv_trapezoidal import compute_cv_c
 
 from sens.models._lj_tools import LJClusterSENS
 
 class TestNS_LJ(unittest.TestCase):
     def setUp(self):
         self.setUp1()
-    
+
+    def compute_cv(self, Tmin=.01, Tmax=3., nT=100):
+        T = np.arange(Tmin, Tmax, (Tmax - Tmin) / nT)
+        Cv = compute_cv_c(np.array(self.ns.max_energies), 
+                          float(self.nproc), float(self.ndof), T.min(), T.max(), T.size, float(self.ndof), live=False)
+        return T, Cv
+
+
     def set_up_system(self):
         self.natoms = 13
         self.gmin = -44.3269
         self.system = LJClusterSENS(self.natoms, 2.5)
+        self.ndof = 3 * self.natoms - 6
 
     def setUp1(self, nproc=1):
         self.set_up_system()
@@ -47,7 +56,6 @@ class TestNS_LJ(unittest.TestCase):
 #        max_iter = 10000
 #        self.Etol = .01
         self.Etol = Etol
-        print max_iter
         for i in xrange(int(max_iter)):
             self.ns.one_iteration()
             deltaE = self.ns.replicas[-1].energy - self.ns.replicas[0].energy
@@ -56,6 +64,14 @@ class TestNS_LJ(unittest.TestCase):
         self.niter = i + 1
         self.Emax = self.ns.replicas[-1].energy
         self.Emin = self.ns.replicas[0].energy
+
+#    def testcv(self):
+#        T, cv = self.compute_cv()
+#        import matplotlib.pyplot as plt
+##        plt.plot(cv)
+#        print cv.shape
+#        plt.plot(T, cv)
+#        plt.show()
 
 
 class testNSPar(TestNS_LJ):

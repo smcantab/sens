@@ -165,7 +165,8 @@ class NestedSamplingSAExact(NestedSampling):
             # no swap done
             return None
 
-        print "accepting swap: Eold %g Enew %g Eold_SA %g Emax %g" % (replica.energy, Esampled, E_SA, Emax)
+        if self.verbose:
+            print "accepting swap: Eold %g Enew %g Eold_SA %g Emax %g" % (replica.energy, Esampled, E_SA, Emax)
         self.count_sampled_minima += 1
         
         return Replica(xsampled, Esampled, from_random=False)
