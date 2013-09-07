@@ -5,18 +5,45 @@ improve sampling in "nested sampling" at low energies
 import numpy as np
 import bisect
 
-from pele.storage.database import Minimum
 from nested_sampling import NestedSampling, Replica
 
 from sens import SASampler
 
-class _UnboundMinimum(object):
+class _UnboundMinimumSmall(object):
+    """represent a minimum object unbound from the database"""
     def __init__(self, energy, coords):
         self.energy = energy
         self.coords = coords
+
+class _UnboundNormalModes(object):
+    def __init__(self, nm):
+        self.freqs = nm.freqs.copy()
+        self.vectors = nm.vectors.copy()
+
+class _UnboundMinimum(object):
+    """represent a minimum object unbound from the database"""
+    def __init__(self, m):
+        self.energy = m.energy
+        self.coords = m.coords
+        self.fvib = m.fvib
+        self.pgorder = m.pgorder
+        self.normal_modes = _UnboundNormalModes(m.normal_modes)
+        
         
 
 class _MinimaSearcher(object):
+    """class to manage searching efficiently for minima in a database
+    
+    Parameters
+    ----------
+    minima : list of Mimumum objects
+    energy_accuracy : float
+        energy tolerance for when to consider that two minima are the same
+    compare_minima : callable, `compare_minima(min1, min2)`
+        a function that returns true if two minima are the same and false otherwise.
+        This is used only if the two minima have energies that are within 
+        energy_accuracy of each other.
+    """
     def __init__(self, minima, energy_accuracy, compare_minima=None):
         self.minima = minima
         self.energy_accuracy = energy_accuracy
@@ -36,7 +63,7 @@ class _MinimaSearcher(object):
         
 #        print "found", imax - imin, "cadidates"
         m = None
-        mtest = _UnboundMinimum(energy, coords)
+        mtest = _UnboundMinimumSmall(energy, coords)
         for e in self.energies[imin:imax]:
             assert Emin <= e <= Emax
             m = self.minima_dict[e]
@@ -66,6 +93,7 @@ class NestedSamplingSAExact(NestedSampling):
     """
     def __init__(self, system, nreplicas, mc_runner, 
                   minima, energy_accuracy, compare_minima=None, mindist=None,
+                  copy_minima=True, config_tests=None,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.minima = minima
@@ -73,6 +101,7 @@ class NestedSamplingSAExact(NestedSampling):
             self._check_minima()
         self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
         self.mindist = mindist
+        self.config_tests = config_tests
         
         self.sa_sampler = SASampler(self.minima, self.system.k)
         
@@ -81,7 +110,11 @@ class NestedSamplingSAExact(NestedSampling):
         
         self.count_sampled_minima = 0
         
-
+        if copy_minima:
+            self.minima = [_UnboundMinimum(m) for m in minima]
+                
+        
+        
 
     def _check_minima(self):
         for m in self.minima:
@@ -112,11 +145,17 @@ class NestedSamplingSAExact(NestedSampling):
     def _attempt_swap(self, replica, Emax):
         # sample a configuration from the harmonic superposition approximation
         m, xsampled = self.sa_sampler.sample_coords(Emax)
+
+        # if the configuration fails the config test then reject the swap
+        if self.config_tests is not None:
+            for test in self.config_tests:
+                if not test(coords=xsampled):
+                    return None
         
         # if the energy returned by full energy function is too high, then reject the swap
         Esampled = self.system.get_energy(xsampled)
         if Esampled >= Emax:
-            return replica
+            return None
         
         # compute the energy of the replica within the superposition approximation.
         E_SA = self._compute_energy_in_SA(replica)
@@ -124,19 +163,19 @@ class NestedSamplingSAExact(NestedSampling):
         # reject if the energy is too high
         if E_SA is None or E_SA >= Emax:
             # no swap done
-            return replica
+            return None
 
-        print "accepting swap"
+        print "accepting swap: Eold %g Enew %g Eold_SA %g Emax %g" % (replica.energy, Esampled, E_SA, Emax)
         self.count_sampled_minima += 1
         
-        return Replica(xsampled, Esampled, from_random=True)
+        return Replica(xsampled, Esampled, from_random=False)
         
 
     def do_monte_carlo_chain(self, replicas, Emax):
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
-        print "attempting swaps"
-        for i, r in enumerate(replicas):
+        for i in xrange(len(replicas)):
+            r = replicas[i]
             rnew = self._attempt_swap(r, Emax)
             if rnew is not None:
                 replicas[i] = rnew

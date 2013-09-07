@@ -45,14 +45,15 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
                                    self.minima, self.energy_accuracy, 
                                    compare_minima=self.system.get_compare_minima(), 
                                    mindist=self.system.get_mindist(),
+                                   config_tests = self.system.get_config_tests(),
                                    stepsize=0.1, nproc=nproc, verbose=True)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
         self.run_ns(max_iter=1000, Etol=.01)
     
-    def test2(self):
-        self.assertGreater(self.ns.count_sampled_minima, 0)
+#    def test2(self):
+#        self.assertGreater(self.ns.count_sampled_minima, 0)
     
 
 #class testSENS_LJ_Par(TestSENS_LJ):

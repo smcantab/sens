@@ -18,6 +18,7 @@ except ImportError:
 class SphericalContainerWraper(SphericalContainer):
     """return false if an atom is outside the spherical container"""
     def __call__(self, energy=None, coords=None):
+        assert coords is not None
         return self.accept(coords)
 
 class LJClusterSENS(LJCluster):

@@ -3,8 +3,10 @@ from _test_weighted_pick import *
 from _test_ns_lj import *
 from _test_sens_lj import *
 from _test_build_database import *
+from _test_minima_searcher import *
+from _test_sens_exact_lj import *
 
-long_test = True
+long_test = False
 if long_test:
     from _test_ns_lj_long import *
     from _test_sens_lj_long import *

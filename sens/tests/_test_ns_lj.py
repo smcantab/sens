@@ -41,6 +41,7 @@ class TestNS_LJ(unittest.TestCase):
         self.assert_(self.Emin >= self.gmin)
         self.assert_(self.ns.stepsize != self.stepsize)
         self.assertEqual(len(self.ns.max_energies), self.niter * self.nproc)
+        self.assertEqual(self.ns.failed_mc_walks, 0)
 
     def run_ns(self, max_iter=100, Etol=1e-4):
 #        max_iter = 10000
