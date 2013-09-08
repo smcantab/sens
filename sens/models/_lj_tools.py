@@ -8,8 +8,14 @@ from pele.mindist import PointGroupOrderCluster
 from pele.optimize import Result
 
 from nested_sampling.utils.rotations import vector_random_uniform_hypersphere
+from nested_sampling import MonteCarloWalker
 
-from sens.src.runmc import mc_cython as lj_mc_cython
+try:
+    from sens.src.runmc import mc_cython as lj_mc_cython
+    _use_cython = True
+except ImportError:
+    sys.stderr.write("warning, couldn't import lj_mc_cython.  will use the slow mc walker instead")
+    _use_cython = False
 
 
 class SphericalContainerWraper(SphericalContainer):
@@ -60,7 +66,13 @@ class LJClusterSENS(LJCluster):
         x -= com[np.newaxis, :]
     
     def get_mc_walker(self, mciter):
-        return LJMonteCarloCompiled(self.radius, mciter=mciter)
+        if _use_cython:
+            return LJMonteCarloCompiled(self.radius, mciter=mciter)
+        else:
+            pot = self.get_potential()
+            pot.get_energy = pot.getEnergy
+            return MonteCarloWalker(pot, accept_test=self.get_config_tests()[0], 
+                                    mciter=mciter)
 
 
 class LJMonteCarloCompiled(object):

@@ -169,6 +169,7 @@ class NestedSamplingSAExact(NestedSampling):
         m, xsampled = self.sa_sampler.sample_coords(Emax)
 
         # if the configuration fails the config test then reject the swap
+#        print "attempting swap"
         if self.config_tests is not None:
             for test in self.config_tests:
                 if not test(coords=xsampled):
@@ -195,14 +196,16 @@ class NestedSamplingSAExact(NestedSampling):
         
 
     def do_monte_carlo_chain(self, replicas, Emax):
-        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
+#        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
+        # try to swap this configuration with one sampled from the HSA
         for i in xrange(len(replicas)):
             r = replicas[i]
             rnew = self._attempt_swap(r, Emax)
             if rnew is not None:
                 replicas[i] = rnew
         
+        # do a monte carlo walk
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
         return replicas

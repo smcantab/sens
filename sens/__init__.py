@@ -1,18 +1,5 @@
 """
-.. currentmodule:: nested_sampling
-
-.. autosummary::
-   :toctree: generated/
-
-    NestedSampling
-    NestedSamplingBS
-    
-    run_nested_sampling
-
-    LJClusterNew
-    
-    IsingSystem
-    IsingRunner
+.. currentmodule:: sens
 
 """
 

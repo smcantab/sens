@@ -10,7 +10,7 @@ from sens.models._lj_tools import LJClusterSENS
 
 import _test_ns_lj
 
-class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
+class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.setUp1()
     
@@ -40,7 +40,7 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
         self.minima = list(self.database.minima())
         assert self.database.number_of_minima() > 1, "%d minima" %  self.database.number_of_minima()
         
-        self.mc_runner = self.system.get_mc_walker(mciter=100)
+        self.mc_runner = self.system.get_mc_walker(mciter=200)
 
         self.energy_accuracy = 1e-4
         self.ns = NestedSamplingSAExact(self.system, self.nreplicas, self.mc_runner,
@@ -48,16 +48,16 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
                                    compare_minima=self.system.get_compare_minima(), 
                                    mindist=self.system.get_mindist(),
                                    config_tests = self.system.get_config_tests(),
-                                   stepsize=0.1, nproc=nproc, verbose=False)
+                                   stepsize=0.1, nproc=nproc, verbose=True, iprint=100)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
-        self.run_ns(max_iter=1000, Etol=.01)
+        self.run_ns(max_iter=1000, Etol=.001)
     
 
     
     def test1(self):
-        super(TestSENS_LJ, self).test1()
+        super(TestSENSExact_LJ, self).test1()
         self.assertGreater(self.ns.count_sampled_minima, 0)
         
 #        T, cv = self.compute_cv()
