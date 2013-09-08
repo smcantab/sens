@@ -21,7 +21,7 @@ def main():
 
     system = LJCluster(args.natoms,)
 
-    if True:
+    if False:
         # build the database    
         database = system.create_database(args.db, createdb=True)
         bh = system.get_basinhopping(database)

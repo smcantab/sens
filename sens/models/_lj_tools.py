@@ -14,7 +14,7 @@ try:
     from sens.src.runmc import mc_cython as lj_mc_cython
     _use_cython = True
 except ImportError:
-    sys.stderr.write("warning, couldn't import lj_mc_cython.  will use the slow mc walker instead")
+    sys.stderr.write("warning, couldn't import lj_mc_cython.  will use the slow mc walker instead\n")
     _use_cython = False
 
 
