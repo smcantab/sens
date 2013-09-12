@@ -4,6 +4,7 @@ import numpy as np
 from sens import NestedSamplingSA
 
 import _test_ns_lj
+from _utils import build_database
 
 class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
@@ -15,7 +16,11 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
         self.stepsize = 0.01
         self.nproc = nproc
         
-        self.database = self.system.create_database("lj13.db")
+        try:
+            self.database = self.system.create_database("lj13.db", createdb=False)
+        except IOError:
+            self.database = build_database(self.system, 20, dbfname="lj13.db")
+            
         self.minima = self.database.minima()
         assert self.database.number_of_minima() > 1, "%d minima" %  self.database.number_of_minima()
         

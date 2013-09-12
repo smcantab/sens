@@ -12,8 +12,10 @@ import _test_ns_lj
 
 class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
-#        self.seed = 4
-#        np.random.seed(self.seed)
+        self.seed = np.random.randint(1000000)
+#        self.seed = 69494
+        print "seed", self.seed
+        np.random.seed(self.seed)
         self.setUp1()
     
     def set_up_system(self):
