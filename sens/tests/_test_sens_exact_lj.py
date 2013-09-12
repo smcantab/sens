@@ -12,6 +12,8 @@ import _test_ns_lj
 
 class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
+#        self.seed = 4
+#        np.random.seed(self.seed)
         self.setUp1()
     
     def set_up_system(self):
@@ -45,7 +47,6 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
         self.energy_accuracy = 1e-4
         self.ns = NestedSamplingSAExact(self.system, self.nreplicas, self.mc_runner,
                                    self.minima, self.energy_accuracy, 
-                                   compare_minima=self.system.get_compare_minima(), 
                                    mindist=self.system.get_mindist(),
                                    config_tests = self.system.get_config_tests(),
                                    stepsize=0.1, nproc=nproc, verbose=True, iprint=100)
@@ -70,9 +71,9 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
         
         
 
-#class testSENS_LJ_Par(TestSENS_LJ):
-#    def setUp(self):
-#        self.setUp1(nproc=3)
+class TestSENSExact_LJ_Par(TestSENSExact_LJ):
+    def setUp(self):
+        self.setUp1(nproc=3)
     
     
 if __name__ == "__main__":

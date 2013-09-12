@@ -352,7 +352,9 @@ class SASampler(object):
         coords = self.sample_coords_from_basin(m, Emax)
         return m, coords
     
-    def compute_energy(self, x, x0, m):
+    def compute_energy(self, x, m, x0=None):
+        if x0 is None:
+            x0 = m.coords
         dx = x - x0
         nm = m.normal_modes
         freqs = nm.freqs

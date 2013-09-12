@@ -17,7 +17,6 @@ def main():
     args = parser.parse_args()
     
     
-    
 
     system = LJCluster(args.natoms,)
 
@@ -33,7 +32,9 @@ def main():
 
     assert database.number_of_minima() > 0
     
+    print "computing the vibrational free energy and the point group order"
     get_thermodynamic_information(system, database)
+    print "computing the normal modes"
     get_all_normalmodes(system, database)
 
     

@@ -19,7 +19,7 @@ def main():
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
     args = parser.parse_args()
-    
+    print args
     
     if args.sens_exact and args.db == "":
         raise Exception("for sens you must specify a database file")
@@ -41,6 +41,7 @@ def main():
     nskwargs = dict(nproc=args.nproc, 
                         verbose=not args.q, iprint=args.iprint)
     
+    print "mciter", args.mciter
     if args.sens_exact:
         
         ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner,

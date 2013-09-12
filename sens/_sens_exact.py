@@ -4,6 +4,7 @@ improve sampling in "nested sampling" at low energies
 """
 import numpy as np
 import bisect
+from collections import namedtuple
 
 from nested_sampling import NestedSampling, Replica
 
@@ -39,15 +40,15 @@ class _MinimaSearcher(object):
     minima : list of Mimumum objects
     energy_accuracy : float
         energy tolerance for when to consider that two minima are the same
-    compare_minima : callable, `compare_minima(min1, min2)`
-        a function that returns true if two minima are the same and false otherwise.
+    compare_structures : callable, `compare_structures(coords1, coords2)`
+        a function that returns true if two structures are the same and false otherwise.
         This is used only if the two minima have energies that are within 
         energy_accuracy of each other.
     """
-    def __init__(self, minima, energy_accuracy, compare_minima=None):
+    def __init__(self, minima, energy_accuracy, compare_structures=None):
         self.minima = minima
         self.energy_accuracy = energy_accuracy
-        self.compare_minima = compare_minima
+        self.compare_structures = compare_structures
         
         self.minima_dict = dict([(m.energy, m) for m in self.minima])
         self.energies = [m.energy for m in self.minima]
@@ -62,18 +63,23 @@ class _MinimaSearcher(object):
         imin = bisect.bisect_left(self.energies, Emin)
         
 #        print "found", imax - imin, "cadidates"
-        m = None
+        RetVal = namedtuple("RetVal", ["minimum", "transformation"])
+        retval = RetVal(minimum=None, transformation=None)
         mtest = _UnboundMinimumSmall(energy, coords)
         for e in self.energies[imin:imax]:
             assert Emin <= e <= Emax
             m = self.minima_dict[e]
+            retval = RetVal(minimum=m, transformation=None)
 
+            
             # compare the coordinates more carefully
-            if self.compare_minima is not None:            
-                if self.compare_minima(mtest, m):
+            if self.compare_structures is not None:
+                transform = self.compare_structures.find_transformation(m.coords, mtest.coords)
+                if transform is not None:
+                    retval._replace(transformation=transform)
                     break
         
-        return m
+        return retval
             
 
 class ConfigTestError(StandardError):
@@ -92,10 +98,12 @@ class NestedSamplingSAExact(NestedSampling):
     minima : list of Minimum objects
     """
     def __init__(self, system, nreplicas, mc_runner, 
-                  minima, energy_accuracy, compare_minima=None, mindist=None,
+                  minima, energy_accuracy, compare_structures=None, mindist=None,
                   copy_minima=True, config_tests=None, minimizer=None,
+                  debug=True,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
+        self.debug = debug
         if copy_minima:
             self.minima = [_UnboundMinimum(m) for m in minima]
         else:
@@ -103,10 +111,10 @@ class NestedSamplingSAExact(NestedSampling):
         if self.verbose:
             self._check_minima()
         
-        self.compare_minima = compare_minima
-        if compare_minima is None:
+        self.compare_structures = compare_structures
+        if compare_structures is None:
             try:
-                self.compare_minima = self.system.get_compare_minima()
+                self.compare_structures = self.system.get_compare_exact()
             except NotImplementedError or AttributeError:
                 pass
         
@@ -128,16 +136,12 @@ class NestedSamplingSAExact(NestedSampling):
         if self.minimizer is None:
             self.minimizer = self.system.get_minimizer()
         
-        self.minima_searcher = _MinimaSearcher(minima, energy_accuracy, compare_minima)
+        self.minima_searcher = _MinimaSearcher(self.minima, energy_accuracy, self.compare_structures)
         self.sa_sampler = SASampler(self.minima, self.system.k)
 
         
         self.count_sampled_minima = 0
         
-                
-        
-        
-
     def _check_minima(self):
         for m in self.minima:
             assert m.energy is not None
@@ -146,21 +150,49 @@ class NestedSamplingSAExact(NestedSampling):
             assert m.normal_modes is not None
 
     def _compute_energy_in_SA(self, replica):
+        """compute the energy of the coordinates in replica.coords in the harmonic superposition approximation
+        
+        This is where most of the difficulty is in the algorithm.  
+        
+        This is also where all the system dependence is
+        """
         # quench to nearest minimum
         qresult = self.minimizer(replica.x)
         
         # check if that minimum is in the database.  reject if not
-        m = self.minima_searcher.get_minima(qresult.energy, qresult.coords)
+        m, transformation = self.minima_searcher.get_minima(qresult.energy, qresult.coords)
         if m is None:
             return None
         
-        # put the two structures in best alignment.
-        # e.g. account for trivial tranlational and rotational degrees of freedom
-        x, x0 = replica.x.copy(), qresult.coords.copy()
+        # put replica.coords into best alignment with the structure stored in m.coords
+        # this involves accounting for symmetries of the Hamiltonian like translational, 
+        # rotational and permutations symmetries.  You can use the coordinates in qresult.coords
+        # to help find the best permutation.  Ultimately it must be aligned with the structure in m.coords
+        # The hessian eigenvectors were computed with a given permutation
+        # e.g. account for trivial translational and rotational degrees of freedom
+        x = replica.x.copy()
+        if transformation is not None:
+            # transformation is the set of transformations that put qresult.coords into exact
+            # alignment with m.coords.  If we apply these transformations to replica.x then
+            # replica.x will be in good (although not perfect) alignment already with m.coords 
+            x = self.compare_structures.apply_transformation(x, transformation)
+            
+        # Do a final round of optimization to further improve the alignment
         if self.mindist is not None:
-            dist, x, x0 = self.mindist(x, x0)
+            dist, x0, x = self.mindist(m.coords.copy(), x)
+            if self.debug:
+                diff = np.linalg.norm(x0 - m.coords)
+                if diff > .01:
+                    with open("error.xyz", "w") as fout:
+                        from pele.utils.xyz import write_xyz
+                        write_xyz(fout, x0)
+                        write_xyz(fout, m.coords)
+                        
+                    raise Exception("warning, mindist appears to have changed x0.  the norm of the difference is %g" % diff)
+                    
+                assert (x0 == m.coords).all()
         
-        energy = self.sa_sampler.compute_energy(x, x0, m)
+        energy = self.sa_sampler.compute_energy(x, m)
         
         return energy
 

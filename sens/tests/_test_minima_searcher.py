@@ -19,20 +19,20 @@ class TestMinimaSearch(unittest.TestCase):
         
         self.ndof = self.natoms * 3 - 6
     
-        self.minima_searcher = _MinimaSearcher(self.database.minima(), energy_accuracy=1e-4, compare_minima=self.database.compareMinima)
+        self.minima_searcher = _MinimaSearcher(self.database.minima(), energy_accuracy=1e-4, compare_structures=self.system.get_compare_exact())
 
     def test_exact(self):
         for m in self.database.minima():
-            mret = self.minima_searcher.get_minima(m.energy, m.coords)
+            mret, tform = self.minima_searcher.get_minima(m.energy, m.coords)
             self.assertEqual(m, mret)
 
     def test_random(self):
         for m in self.database.minima():
-            mret = self.minima_searcher.get_minima(m.energy + np.random.uniform(-1e-4, 1e-4), m.coords)
+            mret, tform = self.minima_searcher.get_minima(m.energy + np.random.uniform(-1e-4, 1e-4), m.coords)
             self.assertEqual(m, mret)
     def test_none(self):
         for m in self.database.minima():
-            mret = self.minima_searcher.get_minima(m.energy + 10., m.coords)
+            mret, tform = self.minima_searcher.get_minima(m.energy + 10., m.coords)
             self.assertIsNone(mret)
 
 
