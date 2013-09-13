@@ -14,6 +14,7 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.seed = np.random.randint(1000000)
 #        self.seed = 69494
+#        self.seed = 480482
         print "seed", self.seed
         np.random.seed(self.seed)
         self.setUp1()

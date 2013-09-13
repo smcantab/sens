@@ -5,8 +5,9 @@ improve sampling in "nested sampling" at low energies
 import numpy as np
 import bisect
 from collections import namedtuple
+import time
 
-from nested_sampling import NestedSampling, Replica
+from nested_sampling import NestedSampling, Replica, Result
 
 from sens import SASampler
 
@@ -141,6 +142,8 @@ class NestedSamplingSAExact(NestedSampling):
 
         
         self.count_sampled_minima = 0
+        self._times = Result(mc=0., sampling=0.)
+        self._times.at_start = time.clock()
         
     def _check_minima(self):
         for m in self.minima:
@@ -231,6 +234,7 @@ class NestedSamplingSAExact(NestedSampling):
 #        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
         # try to swap this configuration with one sampled from the HSA
+        t0 = time.clock()
         for i in xrange(len(replicas)):
             r = replicas[i]
             rnew = self._attempt_swap(r, Emax)
@@ -238,8 +242,14 @@ class NestedSamplingSAExact(NestedSampling):
                 replicas[i] = rnew
         
         # do a monte carlo walk
+        t1 = time.clock()
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
+        t2 = time.clock()
+        self._times.mc += t2 - t1
+        self._times.sampling += t1 - t0
+        if self.verbose and self.iprint > 0 and self.iter_number % self.iprint == 0:
+            print "time in mc walk", self._times.mc, "sampling", self._times.sampling, "tot", t2 - self._times.at_start, "this iter", t2-t1, t1-t0 
         return replicas
         
         

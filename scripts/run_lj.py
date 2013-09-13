@@ -1,7 +1,7 @@
 import argparse
 
 from nested_sampling._nested_sampling import NestedSampling
-from nested_sampling.nested_sampling_runner import run_nested_sampling
+from nested_sampling import run_nested_sampling
 
 from sens.models._lj_tools import LJClusterSENS
 from sens import NestedSamplingSA, NestedSamplingSAExact
