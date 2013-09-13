@@ -36,12 +36,27 @@ class TestBuildDatabase(unittest.TestCase):
 #            m = self.sampler.sample_minimum(-11)
 #            print m._id
 
+    def compute_weights(self, Emax, k):
+        print [m.energy for m in self.database.minima()], Emax
+        lweights = [ - np.log(m.pgorder) + 0.5 * k * np.log(Emax - m.energy) - 0.5 * m.fvib
+                    for m in self.database.minima() if m.energy < Emax]
+        lweights = np.array(lweights)
+        if lweights.size <= 1: return lweights
+        lwmax = lweights.max()
+        lweights -= lwmax
+        return np.exp(lweights)
+
     def test1(self):
         Emax = -11.7
         minima, weights = self.sampler.compute_weights(0.)
         minima, weights = self.sampler.compute_weights(Emax)
         self.assertAlmostEqual(weights[0], 0.81256984, 3)
         self.assertAlmostEqual(weights[1], 1., 7)
+        
+        new_weights = self.compute_weights(Emax, self.ndof)
+        print weights
+        print new_weights
+        
 
     def test2(self):
         Emax = -11.7

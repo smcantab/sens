@@ -2,6 +2,7 @@ import numpy as np
 from scipy.special import gammaln
 
 from pele.utils.rotations import vec_random_ndim
+from nested_sampling.utils.rotations import vector_random_uniform_hypersphere
 
 from sens.src.weighted_pick import weighted_pick_cython
 
@@ -183,7 +184,7 @@ class SASampler(object):
     in particular it will precompute values so they need not be recalculated every time
     """
     def __init__(self, minima, k):
-        self.minima = minima
+        self.minima = sorted(minima, key=lambda m:m.energy)
         self.k = k
         self.gammalnk = gammaln(self.k)
         self.lVol_prefactor = self.precompute_log_phase_space_volume_prefactor()
@@ -197,13 +198,13 @@ class SASampler(object):
         Notes
         -----
         
-        fvib: log product of squared frequencies
+        fvib: log product of *squared* frequencies
         
         pgorder: point group order
             
         """
         #return - np.log(self.k) - self.gammalnk - m.fvib/2. - np.log(m.pgorder)
-        return - m.fvib/2. - np.log(m.pgorder)
+        return - 0.5 * m.fvib - np.log(m.pgorder)
     
     def precompute_log_phase_space_volume_prefactor(self):
         """return a dictionary of the log phase space volume prefactors
@@ -261,10 +262,11 @@ class SASampler(object):
         nzero = len(evals) - k
     
         # get uniform random k dimensional unit vector
-        f = vec_random_ndim(k)
+        f = vector_random_uniform_hypersphere(k)
     
         # the target increase in energy is sampled from a power law distribution
-        dE_target = np.random.power(k-1) * (Emax - m.energy)
+        # js850 sep 13> dE_target = np.random.power(k-1) * (Emax - m.energy)
+        dE_target = (Emax - m.energy)
         
         # scale f according to dE_target
         f *= np.sqrt(2. * dE_target) #TODO check prefactor
@@ -305,6 +307,8 @@ class SASampler(object):
         #minima2 = [self.minima[i] for i in indices]
         minima2 = self.minima[:i_max]
         lweights = (float(self.k)/2.) * np.log(Emax - self.energyvec[:i_max]) + self.lVol_prefactor_vec[:i_max]
+#        print "energyvec", self.energyvec
+#        print "lvol_pref", self.lVol_prefactor_vec
         weights = np.exp(lweights - np.max(lweights))
         return minima2, weights
     
