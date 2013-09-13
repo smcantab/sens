@@ -14,6 +14,7 @@ def main():
     parser.add_argument("natoms", type=int, help="number of atoms")
     parser.add_argument("db", type=str, help="location of the database")
     parser.add_argument("--normalmodes", type=str, help="store the full normalmodes as well")
+    parser.add_argument("--recalculate", action="store_true", help="recompute the thermodynamic information")
     args = parser.parse_args()
     
     
@@ -33,7 +34,7 @@ def main():
     assert database.number_of_minima() > 0
     
     print "computing the vibrational free energy and the point group order"
-    get_thermodynamic_information(system, database)
+    get_thermodynamic_information(system, database, recalculate=args.recalculate)
     print "computing the normal modes"
     get_all_normalmodes(system, database)
 

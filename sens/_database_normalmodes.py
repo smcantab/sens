@@ -91,20 +91,16 @@ def get_all_normalmodes(system, db):
     # get the frequencies
 #    print "getting the normal mode frequencies"
     for m in db.minima():
-        # calculate the Hessian
-        pot = system.get_potential()
-        e, g, hess = pot.getEnergyGradientHessian(m.coords)
-        
-        # calculate the normal modes from the hessian
-        freq, vectors = compute_normalmodes(hess, metric=None)
-        nm = NormalModes(m, freq, vectors)
-        db.session.add(nm)
-        db.session.commit()
-
-#        # calculate the eigenvalues and eigenvectors of the hessian and attach them to the database
-#        eval, evec = get_eig(hess)
-#        if len(m.hessian_eigs) == 0: 
-#            nm = HessianEigs(m, eval, evec)
+        if m.normal_modes is None:
+            # calculate the Hessian
+            pot = system.get_potential()
+            e, g, hess = pot.getEnergyGradientHessian(m.coords)
+            
+            # calculate the normal modes from the hessian
+            freq, vectors = compute_normalmodes(hess, metric=None)
+            nm = NormalModes(m, freq, vectors)
+            db.session.add(nm)
+            db.session.commit()
 
     db.session.commit()
 

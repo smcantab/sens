@@ -42,6 +42,7 @@ def main():
                         verbose=not args.q, iprint=args.iprint)
     
     print "mciter", args.mciter
+    print "radius", args.radius
     if args.sens_exact:
         
         ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner,
