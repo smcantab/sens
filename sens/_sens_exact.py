@@ -182,14 +182,17 @@ class NestedSamplingSAExact(NestedSampling):
             
         # Do a final round of optimization to further improve the alignment
         if self.mindist is not None:
+            xcopy = x.copy()
             dist, x0, x = self.mindist(m.coords.copy(), x)
             if self.debug:
                 diff = np.linalg.norm(x0 - m.coords)
                 if diff > .01:
                     with open("error.xyz", "w") as fout:
                         from pele.utils.xyz import write_xyz
-                        write_xyz(fout, x0)
-                        write_xyz(fout, m.coords)
+                        write_xyz(fout, m.coords, title="x1 initial")
+                        write_xyz(fout, x0, title="x1 final")
+                        write_xyz(fout, xcopy, title="x2 initial")
+                        write_xyz(fout, x, title="x2 final")
                         
                     raise Exception("warning, mindist appears to have changed x0.  the norm of the difference is %g" % diff)
                     

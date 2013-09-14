@@ -13,8 +13,7 @@ import _test_ns_lj
 class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.seed = np.random.randint(1000000)
-#        self.seed = 69494
-#        self.seed = 480482
+#        self.seed = 549670 # failed self.assertGreater(self.ns.count_sampled_minima, 0)
         print "seed", self.seed
         np.random.seed(self.seed)
         self.setUp1()
@@ -28,7 +27,7 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
 
     def setUp1(self, nproc=1):
         self.set_up_system()
-        self.nreplicas = 10
+        self.nreplicas = 10# * nproc
         self.stepsize = 0.01
         self.nproc = nproc
         
@@ -76,6 +75,7 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
 
 class TestSENSExact_LJ_Par(TestSENSExact_LJ):
     def setUp(self):
+        print "\n\nnproc ", 3
         self.setUp1(nproc=3)
     
     
