@@ -19,6 +19,15 @@ gslpy_include = [gsl_include, numpy_include]
 
 
 setup(
+    name="sens",
+    version='0.1', 
+    description="Implementation of the superposition enhanced nested sampling algorithm",
+    url="https://github.com/smcantab/sens",
+    packages=["sens",
+              "sens.src",
+              "sens.models",
+              "sens.tests",
+             ],
     #cmdclass = {'build_ext': build_ext},
     ext_modules = 
         [
