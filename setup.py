@@ -19,11 +19,21 @@ gslpy_include = [gsl_include, numpy_include]
 
 
 setup(
+    name="sens",
+    version='0.1', 
+    description="Implementation of the superposition enhanced nested sampling algorithm",
+    url="https://github.com/smcantab/sens",
+    packages=["sens",
+              "sens.src",
+              "sens.models",
+              "sens.tests",
+             ],
     #cmdclass = {'build_ext': build_ext},
     ext_modules = 
         [
             Extension("sens.src.weighted_pick", ["sens/src/weighted_pick.c"],
-                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3']                
+                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3'],
+                      include_dirs=[numpy_include],
                        ),
             Extension("sens.src.runmc", ["sens/src/runmc.c", "sens/src/mc.c", "sens/src/lj.c"],
                       include_dirs=gslpy_include,
@@ -35,10 +45,5 @@ setup(
                       extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3',],
                       libraries=['gsl', 'gslcblas', 'm']
                         ), 
-            Extension("sens.src.cv_trapezoidal", ["sens/src/cv_trapezoidal.c", "sens/src/cv.c", "sens/src/lj.c"],
-                      include_dirs=gslpy_include,
-                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3',],
-                      libraries=['gsl', 'gslcblas', 'm']
-                        ),
         ]
 )     

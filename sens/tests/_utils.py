@@ -7,7 +7,7 @@ def build_database(system, nminima, dbfname=None, maxiter=1000):
     else:
         db = system.create_database(dbfname)
     
-    bh = system.get_basinhopping(db)
+    bh = system.get_basinhopping(db, outstream=None)
     
     i = 0
     while db.number_of_minima() < nminima:
