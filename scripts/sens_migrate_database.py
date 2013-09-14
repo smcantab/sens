@@ -34,7 +34,6 @@ def migrate(db):
         raise#raise RuntimeError("failed to migrate database")
     trans.commit()
     connection.close()
-    print "database is at newest version"
 
 def main():    
     parser = argparse.ArgumentParser(description="add the NormalModes table to an existing database")
