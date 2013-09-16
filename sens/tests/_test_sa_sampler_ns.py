@@ -47,7 +47,7 @@ class TestSamplerNS(unittest.TestCase):
         self.system = SamplerSystem()
         
         
-        self.nreplicas = 200
+        self.nreplicas = 500
         replicas = [Replica(x, energy) for energy, x in 
                     [self.system.sample_configuration(10.) for i in range(self.nreplicas)]]
         
@@ -73,8 +73,8 @@ class TestSamplerNS(unittest.TestCase):
     def test1(self):
         for i in range(len(self.T)):
             self.assertAlmostEqual(self.cvNS.U[i], self.cvHSA.U[i], delta=.5)
-            self.assertAlmostEqual(self.cvNS.U2[i], self.cvHSA.U2[i], delta=2.5)
-            self.assertAlmostEqual(self.cvNS.Cv[i], self.cvHSA.Cv[i], delta=2.5)
+            self.assertAlmostEqual(self.cvNS.U2[i], self.cvHSA.U2[i], delta=3.)
+            self.assertAlmostEqual(self.cvNS.Cv[i], self.cvHSA.Cv[i], delta=3.)
         
 
 if __name__ == "__main__":
