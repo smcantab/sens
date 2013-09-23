@@ -143,7 +143,7 @@ class NestedSamplingSAExact(NestedSampling):
         
         self.count_sampled_minima = 0
         self._times = Result(mc=0., sampling=0.)
-        self._times.at_start = time.clock()
+        self._times.at_start = time.time()
         
     def _check_minima(self):
         for m in self.minima:
@@ -237,7 +237,7 @@ class NestedSamplingSAExact(NestedSampling):
 #        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
         # try to swap this configuration with one sampled from the HSA
-        t0 = time.clock()
+        t0 = time.time()
         for i in xrange(len(replicas)):
             r = replicas[i]
             rnew = self._attempt_swap(r, Emax)
@@ -245,10 +245,10 @@ class NestedSamplingSAExact(NestedSampling):
                 replicas[i] = rnew
         
         # do a monte carlo walk
-        t1 = time.clock()
+        t1 = time.time()
         replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
-        t2 = time.clock()
+        t2 = time.time()
         self._times.mc += t2 - t1
         self._times.sampling += t1 - t0
         if self.verbose and self.iprint > 0 and self.iter_number % self.iprint == 0:
