@@ -6,6 +6,7 @@ import numpy as np
 import bisect
 from collections import namedtuple
 import time
+import multiprocessing as mp
 
 from nested_sampling import NestedSampling, Replica, Result
 
@@ -26,7 +27,7 @@ class _UnboundMinimum(object):
     """represent a minimum object unbound from the database"""
     def __init__(self, m):
         self.energy = m.energy
-        self.coords = m.coords
+        self.coords = m.coords.copy()
         self.fvib = m.fvib
         self.pgorder = m.pgorder
         self.normal_modes = _UnboundNormalModes(m.normal_modes)
@@ -100,13 +101,21 @@ class NestedSamplingSAExact(NestedSampling):
     """
     def __init__(self, system, nreplicas, mc_runner, 
                   minima, energy_accuracy, compare_structures=None, mindist=None,
-                  copy_minima=True, config_tests=None, minimizer=None,
+                  copy_minima=True, config_tests=None, minimizer=None, center_minima=False,
                   debug=True,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.debug = debug
-        if copy_minima:
+        if copy_minima or center_minima:
             self.minima = [_UnboundMinimum(m) for m in minima]
+            if center_minima:
+                # js850: this is a quick hack.  this should be done more elegantly
+                for m in self.minima:
+                    x = m.coords.reshape([-1,3])
+                    com = x.sum(0) / x.shape[0]
+                    x = x - com[np.newaxis,:]
+                    x = x.reshape(-1)
+                    m.coords[:] = x[:] 
         else:
             self.minima = minima
         if self.verbose:
@@ -231,18 +240,28 @@ class NestedSamplingSAExact(NestedSampling):
         self.count_sampled_minima += 1
         
         return Replica(xsampled, Esampled, from_random=False)
-        
+
+#    def _attempt_swaps_parallel(self, replicas, Emax):
+#        pool = mp.Pool(self.nproc)
+#        results = pool.map(lambda r: self._attempt_swap(r, Emax), replicas)
+#        for i in xrange(len(replicas)):
+#            newr = results[i]
+#            if newr is not None:
+#                replicas[i] = newr
+
+    def _attempt_swaps(self, replicas, Emax):
+        for i in xrange(len(replicas)):
+            r = replicas[i]
+            rnew = self._attempt_swap(r, Emax)
+            if rnew is not None:
+                replicas[i] = rnew
 
     def do_monte_carlo_chain(self, replicas, Emax):
 #        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
         
         # try to swap this configuration with one sampled from the HSA
         t0 = time.time()
-        for i in xrange(len(replicas)):
-            r = replicas[i]
-            rnew = self._attempt_swap(r, Emax)
-            if rnew is not None:
-                replicas[i] = rnew
+        self._attempt_swaps(replicas, Emax)
         
         # do a monte carlo walk
         t1 = time.time()

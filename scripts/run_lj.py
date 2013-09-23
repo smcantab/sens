@@ -45,11 +45,11 @@ def main():
     print "mciter", args.mciter
     print "radius", args.radius
     if args.sens_exact:
-        
         ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner,
                                    minima, energy_accuracy,
                                    mindist=system.get_mindist(niter=1),
                                    minimizer=system.get_minimizer(tol=1e-4),
+                                   center_minima=True,
                                    **nskwargs)
     else:
         ns = NestedSampling(system, args.nreplicas, mcrunner, 
