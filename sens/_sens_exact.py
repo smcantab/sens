@@ -5,11 +5,8 @@ improve sampling in "nested sampling" at low energies
 import numpy as np
 import time
 import multiprocessing as mp
-
+import collections
 from nested_sampling import NestedSampling, Replica, Result
-
-from sens._HSA_sampler_cluster import HSASamplerCluster
-
 
         
 class _HSASwapper(object):
@@ -132,12 +129,18 @@ class NestedSamplingSAExact(NestedSampling):
         self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.system, 
                                       config_tests=self.config_tests)
         
-        self.count_sampled_minima = 0
+#        self.count_sampled_minima = 0
         self._times = Result(mc=0., sampling=0.)
         self._times.at_start = time.time()
         
         self._set_up_parallelization_swap()
         
+        self._sampled_minima_counts = collections.Counter()
+    
+
+    @property
+    def number_swaps_accepted(self):
+        return sum(self._sampled_minima_counts.values())
 
     def _set_up_parallelization_swap(self):
         """set up the parallel workers for doing swap attempts"""
@@ -168,6 +171,7 @@ class NestedSamplingSAExact(NestedSampling):
             print "accepting swap %d: Eold %g Enew %g Eold_SA %g Emax %g m.energy %g" % (
                         self.iter_number, old_replica.energy, result.new_replica.energy, 
                         result.E_HSA, Emax, result.minimum.energy)
+        self._sampled_minima_counts[result.minimum.energy] += 1
         
 
     def _attempt_swaps_parallel(self, replicas, Emax):
@@ -183,7 +187,7 @@ class NestedSamplingSAExact(NestedSampling):
         for i in xrange(len(replicas)):
             res, index = self._swap_get_queue.get()
             if res is not None:
-                self.count_sampled_minima += 1
+#                self.count_sampled_minima += 1
                 self._print_swap_info(replicas[index], res, Emax)
                 replicas[index] = res.new_replica
         
@@ -196,7 +200,7 @@ class NestedSamplingSAExact(NestedSampling):
             r = replicas[i]
             res = self.hsa_swapper.attempt_swap(r, Emax)
             if res is not None:
-                self.count_sampled_minima += 1
+#                self.count_sampled_minima += 1
                 self._print_swap_info(replicas[i], res, Emax)
                 replicas[i] = res.new_replica
 
@@ -222,7 +226,8 @@ class NestedSamplingSAExact(NestedSampling):
         self._times.mc += t2 - t1
         self._times.sampling += t1 - t0
         if self.verbose and self.iprint > 0 and self.iter_number % self.iprint == 0:
-            print "time in mc walk", self._times.mc, "sampling", self._times.sampling, "tot", t2 - self._times.at_start, "this iter", t2-t1, t1-t0 
+            print "time in mc walk", self._times.mc, "sampling", self._times.sampling, "tot", t2 - self._times.at_start, "this iter", t2-t1, t1-t0
+            print self._sampled_minima_counts 
         return replicas
         
         
