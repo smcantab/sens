@@ -15,6 +15,7 @@ class _UnboundNormalModes(object):
 class _UnboundMinimum(object):
     """represent a minimum object unbound from the database"""
     def __init__(self, m):
+#        self._id = m._id
         self.energy = m.energy
         self.coords = m.coords.copy()
         self.fvib = m.fvib
@@ -26,7 +27,15 @@ class _UnboundMinimum(object):
                 self.normal_modes = None
         except AttributeError:
             self.normal_modes = None
-
+    
+#    def __eq__(self, m2):
+#        assert self._id is not None
+#        assert m2._id is not None
+#        return self._id == m2._id
+#
+#    def __hash__(self):
+#        assert self._id is not None
+#        return self._id
 
 
 class SASampler(object):
