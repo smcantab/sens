@@ -100,7 +100,7 @@ class _SwapInfoAccumulator(object):
     
     def minima_sampled_string(self):
         ostr = "minima sampled: "
-        for energy, count in self._sampled_minima_counts.iteritems():
+        for energy, count in sorted(self._sampled_minima_counts.iteritems(), key=lambda mc: mc[0]):
             ostr += str(energy) + ": " + str(count) + ", "
         if len(self._sampled_minima_counts) > 0:
             # remove the comma and space before returning
@@ -211,7 +211,7 @@ class NestedSamplingSAExact(NestedSampling):
         if self.nproc > 1:
             # terminate the swap workers
             for worker in self._swap_workers:
-                self._swap_put_queue("kill")
+                self._swap_put_queue.put("kill")
             for worker in self._swap_workers:
                 worker.join()
                 worker.terminate()
