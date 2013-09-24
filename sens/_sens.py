@@ -106,8 +106,8 @@ class NestedSamplingSA(NestedSampling):
         energy_onset_width = 1.
         dE = self._energy_max_database + self.energy_offset - Emax
         f = dE / energy_onset_width
-        if f > 100:
-            onset_prob = 0.
+        if np.log(np.finfo('d').max) <= (-f):
+            onset_prob = max_prob
         else:
             onset_prob = max_prob / ( 1. + np.exp(-f))
         return onset_prob
