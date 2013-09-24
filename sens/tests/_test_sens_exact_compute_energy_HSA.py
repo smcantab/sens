@@ -7,7 +7,7 @@ from pele.utils import rotations
 
 from nested_sampling import Replica
 
-from sens._sens_exact import NestedSamplingSAExact
+from sens._HSA_sampler_cluster import HSASamplerCluster
 from sens.models._lj_tools import LJClusterSENS
 from _utils import build_database
 
@@ -33,19 +33,19 @@ class TestSENSExact_LJ(unittest.TestCase):
         
         try:
             self.database = self.system.create_database("/scratch/scratch2/js850/sens/testruns/lj31/lj31.sqlite", createdb=False)
-        except OSError:
-            self.database = build_database(self.system, 10)
+        except IOError:
+            self.database = build_database(self.system, 4)
             
         
 
         self.minima = list(self.database.minima())
         assert self.database.number_of_minima() > 1, "%d minima" %  self.database.number_of_minima()
         
-        self.mc_runner = self.system.get_mc_walker(mciter=200)
-        self.energy_accuracy = 1e-4
-        self.ns = NestedSamplingSAExact(self.system, self.nreplicas, self.mc_runner,
-                                   self.minima, self.energy_accuracy, 
-                                   stepsize=0.1, nproc=nproc, verbose=True, iprint=100)
+        self.sampler = HSASamplerCluster(self.minima, self.ndof, copy_minima=True, 
+                                         center_minima=True, 
+                                         compare_structures=self.system.get_compare_exact(), 
+                                         mindist=self.system.get_mindist(),
+                                         minimizer=self.system.get_minimizer())
 
         self.Emax = min((m.energy for m in self.minima)) + 1.
 
@@ -76,10 +76,10 @@ class TestSENSExact_LJ(unittest.TestCase):
         # sample a configurations fr
         
         # sample a configuration from the HSA
-        m, xsampled = self.ns.sa_sampler.sample_coords(self.Emax)
+        m, xsampled = self.sampler.sample_coords(self.Emax)
         
         # get the energy of that configuration in the HSA
-        E_HSA = self.ns.sa_sampler.compute_energy(xsampled, m)
+        E_HSA = self.sampler.compute_energy(xsampled, m)
         
         # get the real energy of the sampled configuration
         pot = self.system.get_potential()
@@ -95,7 +95,7 @@ class TestSENSExact_LJ(unittest.TestCase):
         
         # use the nested sampling routine to compute the HSA energy of xsampled.
         # This should undo the transformations we applied and find the correct HSA energy 
-        E_HSA_computed = self.ns._compute_energy_in_SA(r)
+        E_HSA_computed = self.sampler.compute_energy_in_HSA(r.energy, r.x)
         
         # assert that self.ns._compute_energy_in_SA(r) was able to recover the correct HSA energy
         self.assertIsNotNone(E_HSA_computed)

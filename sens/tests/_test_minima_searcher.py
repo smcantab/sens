@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from sens._sens_exact import _MinimaSearcher
+from sens._HSA_sampler_cluster import _MinimaSearcher
 from sens.models._lj_tools import LJClusterSENS
 
 class TestMinimaSearch(unittest.TestCase):

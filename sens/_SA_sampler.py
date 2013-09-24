@@ -7,184 +7,48 @@ from nested_sampling.utils.rotations import vector_random_uniform_hypersphere
 from sens.src.weighted_pick import weighted_pick_cython
 
 
-#def vector_random_uniform_hypersphere(k):
-#    """return a vector sampled uniformly in a hypersphere of dimension k"""
-#    u = vec_random_ndim(k)
-#    #draw the magnitude of the vector from a power law density:
-#    #draws samples in [0, 1] from a power distribution with positive exponent k - 1.
-#    p = np.random.power(k)
-#    return p * u
-#
-#def sample_uniformly_in_basin_harmonic(m, Emax, k):
-#    """ Returns a configuration with energy less than Emax sampled uniformly from m-th basin    
-#        this assumes the harmonic approximation and is exact in the harmonic approximation
-#        
-#        Parameters
-#        ----------
-#        
-#        m : Minimum object
-#            normal mode frequencies and associated eigenvectors
-#        Emax : float
-#            energy upper bound
-#        k : integer
-#            number of degrees of freedom
-#    """
-#    nm = m.hessian_eigs[0]
-#    evals = nm.eigenvalues
-#    vectors = nm.eigenvectors
-#    nzero = len(evals) - k
-#
-#    # get uniform random k dimensional unit vector
-#    f = vec_random_ndim(k)
-#
-#    # the target increase in energy is sampled from a power law distribution
-#    dE_target = np.random.power(k-1) * (Emax - m.energy) ####CHANGED TO K-1 
-#    
-#    # scale f according to dE_target
-#    f *= np.sqrt(2. * dE_target)
-#
-#    # create the random displacement vector
-#    dx = np.zeros(m.coords.shape)
-#    for i in range(k):
-#        if evals[i+nzero] > 1e-4:
-#            dx += f[i] * vectors[:,i+nzero] / np.sqrt(evals[i+nzero])
-#    
-#    return m.coords + dx
-#    
-#
-#def sample_uniformly_in_basin(m, Emax, potential, k):
-#    """return a configuration with energy less than Emax sampled uniformly from the basin defined by m
-#    
-#        Parameters
-#        ----------
-#        
-#        m : Minimum object
-#            normal mode frequencies and associated eigenvectors
-#        Emax : float
-#            energy upper bound
-#        Potential: type Potential
-#            potential energy function, takes coordinates and returns energy configuration
-#        k : integer
-#            number of degrees of freedom
-#    """
-#    # displace randomly from the minimum according to the eigenvalues and eigenvectors
-#    E = Emax + 1.
-#    count = 0
-#    while E > Emax:
-#        coords = sample_uniformly_in_basin_harmonic(m, Emax, k)
-#        E = potential.getEnergy(coords)
-#        
-#        # print some stuff
-#        stepsize = np.linalg.norm(coords - m.coords)
-#        print "created structure with energy", E, "Emax", Emax, "Emin", m.energy, count, stepsize
-#        count += 1
-#        
-#    
-#    # now do a short monte carlo sampling to improve unbiased sampling
-#    
-#    return coords, E
-#
-#def compute_log_phase_space_volume(m, Emax, k):
-#    """return the log (base e) of the phase space volume of minima m up to energy Emax
-#    
-#    Notes
-#    -----
-#    
-#    V = Integral from m.energy to Emax of the harmonic density of states DoS(E)
-#    
-#        DoS(E) = 2*N!*(E - m.energy)^(k-1) / (Gamma(k) * prod_freq * O_k)
-#    
-#    After integration between m.energy to Emax one finds the volume:  
-#        
-#    V = 2*N!*(Emax - m.energy)^k / (np.gamma(k+1) * prod_freq * O_k)
-#    
-#    note: gammaln(N+1) approximates the ln(N!)
-#    
-#    Parameters
-#    ----------
-#    
-#    k : integer
-#        number of vibrational degrees of freedom
-#    Gamma : scipy.special function 
-#        gamma function
-#    prod_freq : float
-#        the product of the frequencies (from the eigenvalues of the Hessian)
-#    O_k : integer
-#        the order of the symmetry point group
-#    """
-#    from numpy import log
-#    
-#    if m.energy > Emax:
-#        raise ValueError("Emax (%g) must be greater than the energy of the minimum (%g)" % (Emax, m.energy))
-#    logV = log(2) + gammaln(N+1) + k * log(Emax - m.energy) - gammaln(k+1) - m.fvib/2. - log(m.pgorder)
-#    return logV
-#
-#
-#def sample_minimum(minima, Emax, k):
-#    """return a minimum sampled uniformly with weight according to phase space volume
-#    
-#    Parameters
-#    ----------
-#    minima : list of Mimumum objects
-#    Emax : float
-#        the maximum energy for the phase space volume calculation
-#    k : int
-#        the number of degrees of vibrational freedom (3*N-6 for atomic clusters)
-#    """
-#    # calculate the harmonic phase space volume of each minima and store it in list `weights`
-#    lweights = []
-#    minima2 = []
-#    for m in minima:
-#        if m.energy < Emax:
-#            lV = compute_log_phase_space_volume(m, Emax, k)
-#            lweights.append(lV)
-#            minima2.append(m)
-#    lweights = np.array(lweights)
-#    weights = np.exp(lweights - np.max(lweights))
-#    
-#    # select a minimum uniformly given `weights`
-#    # print "weights", weights[:10]
-#    index = weighted_pick_cython(weights)
-#    # print index, len(weights), len(minima)
-#    m = minima2[index]
-#    return m
-#
-#def sample_from_database(system, minima, Emax):
-#    """return a configuration sampled uniformly from a database of minima according to the harmonic approximation up to energy Emax
-#    
-#    Parameters
-#    ----------
-#    
-#    system : pele System
-#        is the particular system of interest, say LJCluster
-#    minima: array of Minimum objects
-#    Emax : float
-#        energy upper bound
-#    
-#    """
-#    m = sample_minimum(minima, Emax, system.k)
-#    
-#    # sample configuration uniformly from the basin of minima m 
-#    coords, E = sample_uniformly_in_basin(m, Emax, system.get_potential(), system.k)
-#
-#    return coords, E
- 
-#def populate_database(system, db, niter=1000):
-#    """return a database with all important low energy minima 
-#    
-#    """
-#    # use basinhopping to find the low energy minima and store them in a database
-#    bh = system.get_basinhopping(database=db)
-#    bh.run(niter)
+class _UnboundNormalModes(object):
+    def __init__(self, nm):
+        self.freqs = nm.freqs.copy()
+        self.vectors = nm.vectors.copy()
+
+class _UnboundMinimum(object):
+    """represent a minimum object unbound from the database"""
+    def __init__(self, m):
+        self.energy = m.energy
+        self.coords = m.coords.copy()
+        self.fvib = m.fvib
+        self.pgorder = m.pgorder
+        try:
+            if m.normal_modes is not None:
+                self.normal_modes = _UnboundNormalModes(m.normal_modes)
+            else:
+                self.normal_modes = None
+        except AttributeError:
+            self.normal_modes = None
+
 
 
 class SASampler(object):
     """this class will manage the sampling of configurations from a database of minima
     
-    in particular it will precompute values so they need not be recalculated every time
+    It will precompute values so they need not be recalculated every time
     """
-    def __init__(self, minima, k):
-        self.minima = sorted(minima, key=lambda m:m.energy)
+    def __init__(self, minima, k, copy_minima=True, center_minima=False):
+        if copy_minima or center_minima:
+            self.minima = [_UnboundMinimum(m) for m in minima]
+            if center_minima:
+                # js850: this is a quick hack.  this should be done more elegantly
+                for m in self.minima:
+                    x = m.coords.reshape([-1,3])
+                    com = x.sum(0) / x.shape[0]
+                    x = x - com[np.newaxis,:]
+                    x = x.reshape(-1)
+                    m.coords[:] = x[:] 
+        else:
+            self.minima = minima
+        self.minima = sorted(self.minima, key=lambda m:m.energy)
+
         self.k = k
         self.gammalnk = gammaln(self.k)
         self.lVol_prefactor = self.precompute_log_phase_space_volume_prefactor()
@@ -357,6 +221,15 @@ class SASampler(object):
         return m, coords
     
     def compute_energy(self, x, m, x0=None):
+        """compute the harmonic energy of configuration x with respect to minimum m
+        
+        Notes
+        -----
+        x must be aligned with m.coords.  This means that trivial degrees of freedom like
+        translation and rotation must be accounted for because they are not symmetries in the HSA.
+        Depending on which degrees of freedom there are this alignment can be non-trivial, but the tools in
+        pele.mindist can help.   
+        """
         if x0 is None:
             x0 = m.coords
         dx = x - x0
@@ -373,4 +246,3 @@ class SASampler(object):
         return energy
             
             
-
