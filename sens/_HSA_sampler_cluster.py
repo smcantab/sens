@@ -115,6 +115,7 @@ class HSASamplerCluster(SASampler):
         x = x.copy()
         # quench to nearest minimum
         qresult = self.minimizer(x)
+        self._nfev_last_quench = qresult.nfev
         
         # check if that minimum is in the database.  reject if not
         m, transformation = self.minima_searcher.get_minimum(qresult.energy, qresult.coords)

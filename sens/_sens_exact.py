@@ -20,6 +20,7 @@ class _HSASwapper(object):
     def attempt_swap(self, replica, Emax):
         res = Result()
         res.new_replica = None
+        res.nfev = 0
         
         # sample a configuration from the harmonic superposition approximation
         m, xsampled = self.hsa_sampler.sample_coords(Emax)
@@ -33,12 +34,14 @@ class _HSASwapper(object):
         
         # if the energy returned by full energy function is too high, then reject the swap
         Esampled = self.potential.get_energy(xsampled)
+        res.nfev += 1
         if Esampled >= Emax:
             res.reason_rejected = "Esampled too large"
             return res
         
         # compute the energy of the replica within the superposition approximation.
         E_HSA = self.hsa_sampler.compute_energy_in_HSA(replica.energy, replica.x)
+        res.nfev += self.hsa_sampler._nfev_last_quench
         
         # reject if the returned energy is None.  This probably means that replica.x quenched to a minimum not in the database
         if E_HSA is None:
@@ -82,8 +85,10 @@ class _SwapInfoAccumulator(object):
     def __init__(self):
         self._sampled_minima_counts = collections.Counter()
         self._reasons_rejected = collections.Counter()
+        self.nfev = 0
     
     def add_swap(self, old_replica, result, Emax):
+        self.nfev += result.nfev
         if result.new_replica is None:
             self._reasons_rejected[result.reason_rejected] += 1
         else:
@@ -279,7 +284,8 @@ class NestedSamplingSAExact(NestedSampling):
         self._times.mc += t2 - t1
         self._times.sampling += t1 - t0
         if self.verbose and self.iprint > 0 and self.iter_number % self.iprint == 0:
-            print "time in mc walk", self._times.mc, "sampling", self._times.sampling, "tot", t2 - self._times.at_start, "this iter", t2-t1, t1-t0
+            print "times: mc walk", self._times.mc, "swapping", self._times.sampling, "tot", t2 - self._times.at_start, "this iter", t2-t1, t1-t0
+            print "function evaluations: mc walk", self._mc_niter, "swapping", self._swap_info.nfev
             self._swap_info.print_info() 
         return replicas
         
