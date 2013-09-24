@@ -12,10 +12,67 @@ from sens._HSA_sampler_cluster import HSASamplerCluster
 
 
         
+class _HSASwapper(object):
+    """organize the swapping with the HSA
+    """
+    def __init__(self, hsa_sampler, minimizer, potential, config_tests=None):
+        self.hsa_sampler = hsa_sampler
+        self.minimizer = minimizer
+        self.potential = potential
+        self.config_tests = config_tests
+
+    def attempt_swap(self, replica, Emax):
+        # sample a configuration from the harmonic superposition approximation
+        m, xsampled = self.hsa_sampler.sample_coords(Emax)
+
+        # if the configuration fails the config test then reject the swap
+        if self.config_tests is not None:
+            for test in self.config_tests:
+                if not test(coords=xsampled):
+                    return None
         
+        # if the energy returned by full energy function is too high, then reject the swap
+        Esampled = self.potential.get_energy(xsampled)
+        if Esampled >= Emax:
+            return None
+        
+        # compute the energy of the replica within the superposition approximation.
+        E_HSA = self.hsa_sampler.compute_energy_in_HSA(replica.energy, replica.x)
+        
+        # reject if the energy is too high
+        if E_HSA is None or E_HSA >= Emax:
+            # no swap done
+            return None
+
+        # return the results in a Results dictionary
+        res = Result()
+        res.new_replica = Replica(xsampled, Esampled, from_random=False)
+        res.minimum = m
+        res.E_HSA = E_HSA
+        
+        return res
 
 
+
+class _HSASwapperParallel(mp.Process):
+    def __init__(self, hsa_swapper, input_queue, output_queue):
+        mp.Process.__init__(self)
+        self.hsa_swapper = hsa_swapper
+        self.input_queue = input_queue
+        self.output_queue = output_queue
+        
+    def run(self):
+        while True:
+            val = self.input_queue.get()
+            if val == "kill":
+                break
             
+            args, r_index = val
+            result = self.hsa_swapper.attempt_swap(*args)
+            self.output_queue.put((result, r_index))
+        
+    
+         
 
 
 class NestedSamplingSAExact(NestedSampling):
@@ -37,20 +94,6 @@ class NestedSamplingSAExact(NestedSampling):
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.debug = debug
-#        if copy_minima or center_minima:
-#            self.minima = [_UnboundMinimum(m) for m in minima]
-#            if center_minima:
-#                # js850: this is a quick hack.  this should be done more elegantly
-#                for m in self.minima:
-#                    x = m.coords.reshape([-1,3])
-#                    com = x.sum(0) / x.shape[0]
-#                    x = x - com[np.newaxis,:]
-#                    x = x.reshape(-1)
-#                    m.coords[:] = x[:] 
-#        else:
-#            self.minima = minima
-#        if self.verbose:
-#            self._check_minima()
         
         self.compare_structures = compare_structures
         if compare_structures is None:
@@ -84,57 +127,78 @@ class NestedSamplingSAExact(NestedSampling):
                                              mindist=self.mindist, 
                                              minimizer=self.minimizer, 
                                              debug=self.debug)
+        self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.minimizer, self.system, 
+                                      config_tests=self.config_tests)
         
         self.count_sampled_minima = 0
         self._times = Result(mc=0., sampling=0.)
         self._times.at_start = time.time()
         
-
-
-    def _attempt_swap(self, replica, Emax):
-        # sample a configuration from the harmonic superposition approximation
-        m, xsampled = self.hsa_sampler.sample_coords(Emax)
-
-        # if the configuration fails the config test then reject the swap
-#        print "attempting swap"
-        if self.config_tests is not None:
-            for test in self.config_tests:
-                if not test(coords=xsampled):
-                    return None
+        self._set_up_parallelization_swap()
         
-        # if the energy returned by full energy function is too high, then reject the swap
-        Esampled = self.system.get_energy(xsampled)
-        if Esampled >= Emax:
-            return None
-        
-        # compute the energy of the replica within the superposition approximation.
-        E_SA = self.hsa_sampler.compute_energy_in_HSA(replica.energy, replica.x)
-        
-        # reject if the energy is too high
-        if E_SA is None or E_SA >= Emax:
-            # no swap done
-            return None
 
-        if self.verbose:
-            print "accepting swap %d: Eold %g Enew %g Eold_SA %g Emax %g m.energy %g" % (self.iter_number, replica.energy, Esampled, E_SA, Emax, m.energy)
-        self.count_sampled_minima += 1
+    def _set_up_parallelization_swap(self):
+        if self.nproc > 1:
+            self._swap_get_queue = mp.Queue()
+            self._swap_put_queue = mp.Queue()
+            self._swap_workers = []
+            for i in xrange(self.nproc):
+                worker = _HSASwapperParallel(self.hsa_swapper, self._swap_put_queue, self._swap_get_queue)
+                worker.daemon = True
+                worker.start()
+                self._swap_workers.append(worker)
+    
+    def finish(self):
+        NestedSampling.finish(self)
+        if self.nproc > 1:
+            # terminate the swap workers
+            for worker in self._swap_workers:
+                self._swap_put_queue("kill")
+            for worker in self._swap_workers:
+                worker.join()
+                worker.terminate()
+                worker.join()
+
+    
+    def _print_swap_info(self, old_replica, result, Emax):
+        if self.verbose and result is not None:
+            print "accepting swap %d: Eold %g Enew %g Eold_SA %g Emax %g m.energy %g" % (
+                        self.iter_number, old_replica.energy, result.new_replica.energy, 
+                        result.E_HSA, Emax, result.minimum.energy)
         
-        return Replica(xsampled, Esampled, from_random=False)
 
-#    def _attempt_swaps_parallel(self, replicas, Emax):
-#        pool = mp.Pool(self.nproc)
-#        results = pool.map(lambda r: self._attempt_swap(r, Emax), replicas)
-#        for i in xrange(len(replicas)):
-#            newr = results[i]
-#            if newr is not None:
-#                replicas[i] = newr
+    def _attempt_swaps_parallel(self, replicas, Emax):
+        assert self.nproc > 1
+        assert len(replicas) == self.nproc
+        
+        # put all the replicas into the queue
+        for index, r in enumerate(replicas):
+            self._swap_put_queue.put(((r, Emax), index))
+        
+        # retrieve the results from the queue
+        for i in xrange(len(replicas)):
+            res, index = self._swap_get_queue.get()
+            if res is not None:
+                self.count_sampled_minima += 1
+                self._print_swap_info(replicas[index], res, Emax)
+                replicas[index] = res.new_replica
+        
+        assert self._swap_get_queue.empty() 
 
-    def _attempt_swaps(self, replicas, Emax):
+    def _attempt_swaps_serial(self, replicas, Emax):
         for i in xrange(len(replicas)):
             r = replicas[i]
-            rnew = self._attempt_swap(r, Emax)
-            if rnew is not None:
-                replicas[i] = rnew
+            res = self.hsa_swapper.attempt_swap(r, Emax)
+            if res is not None:
+                self.count_sampled_minima += 1
+                self._print_swap_info(replicas[i], res, Emax)
+                replicas[i] = res.new_replica
+
+    def _attempt_swaps(self, replicas, Emax):
+        if self.nproc > 1:
+            return self._attempt_swaps_parallel(replicas, Emax)
+        else:
+            return self._attempt_swaps_serial(replicas, Emax)
 
     def do_monte_carlo_chain(self, replicas, Emax):
 #        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
