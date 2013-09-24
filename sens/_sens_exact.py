@@ -56,7 +56,7 @@ class _MinimaSearcher(object):
         self.energies = [m.energy for m in self.minima]
         self.energies.sort()
         
-    def get_minima(self, energy, coords):
+    def get_minimum(self, energy, coords):
         """return the minimum that matches energy and coords.  return None if there is no match"""
         # first get a list of minima energies that might be the same minima
         Emax = energy + self.energy_accuracy
@@ -73,11 +73,14 @@ class _MinimaSearcher(object):
             m = self.minima_dict[e]
             retval = RetVal(minimum=m, transformation=None)
 
-            
             # compare the coordinates more carefully
-            if self.compare_structures is not None:
+            if self.compare_structures is None:
+                break
+            else:
                 transform = self.compare_structures.find_transformation(m.coords, mtest.coords)
                 if transform is not None:
+                    # the structures match exactly.  
+                    # transform is the transformation that turns coords into m.coords 
                     retval._replace(transformation=transform)
                     break
         
@@ -172,7 +175,7 @@ class NestedSamplingSAExact(NestedSampling):
         qresult = self.minimizer(replica.x)
         
         # check if that minimum is in the database.  reject if not
-        m, transformation = self.minima_searcher.get_minima(qresult.energy, qresult.coords)
+        m, transformation = self.minima_searcher.get_minimum(qresult.energy, qresult.coords)
         if m is None:
             return None
         

@@ -23,16 +23,16 @@ class TestMinimaSearch(unittest.TestCase):
 
     def test_exact(self):
         for m in self.database.minima():
-            mret, tform = self.minima_searcher.get_minima(m.energy, m.coords)
+            mret, tform = self.minima_searcher.get_minimum(m.energy, m.coords)
             self.assertEqual(m, mret)
 
     def test_random(self):
         for m in self.database.minima():
-            mret, tform = self.minima_searcher.get_minima(m.energy + np.random.uniform(-1e-4, 1e-4), m.coords)
+            mret, tform = self.minima_searcher.get_minimum(m.energy + np.random.uniform(-1e-4, 1e-4), m.coords)
             self.assertEqual(m, mret)
     def test_none(self):
         for m in self.database.minima():
-            mret, tform = self.minima_searcher.get_minima(m.energy + 10., m.coords)
+            mret, tform = self.minima_searcher.get_minimum(m.energy + 10., m.coords)
             self.assertIsNone(mret)
 
 
