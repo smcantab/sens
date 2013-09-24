@@ -138,6 +138,7 @@ class NestedSamplingSAExact(NestedSampling):
         
 
     def _set_up_parallelization_swap(self):
+        """set up the parallel workers for doing swap attempts"""
         if self.nproc > 1:
             self._swap_get_queue = mp.Queue()
             self._swap_put_queue = mp.Queue()
@@ -168,6 +169,7 @@ class NestedSamplingSAExact(NestedSampling):
         
 
     def _attempt_swaps_parallel(self, replicas, Emax):
+        """do all the swap attempts in parallel"""
         assert self.nproc > 1
         assert len(replicas) == self.nproc
         
@@ -186,6 +188,8 @@ class NestedSamplingSAExact(NestedSampling):
         assert self._swap_get_queue.empty() 
 
     def _attempt_swaps_serial(self, replicas, Emax):
+        assert len(replicas) == 1
+        """do all the swap attempts in serial""" 
         for i in xrange(len(replicas)):
             r = replicas[i]
             res = self.hsa_swapper.attempt_swap(r, Emax)
@@ -195,14 +199,15 @@ class NestedSamplingSAExact(NestedSampling):
                 replicas[i] = res.new_replica
 
     def _attempt_swaps(self, replicas, Emax):
+        """attempt to swap the replicas"""
         if self.nproc > 1:
             return self._attempt_swaps_parallel(replicas, Emax)
         else:
             return self._attempt_swaps_serial(replicas, Emax)
 
     def do_monte_carlo_chain(self, replicas, Emax):
-#        replicas = super(NestedSamplingSAExact, self).do_monte_carlo_chain(replicas, Emax)
-        
+        """attempt to swap the replicas with one draw from the HSA before doing the monte carlo walk
+        """
         # try to swap this configuration with one sampled from the HSA
         t0 = time.time()
         self._attempt_swaps(replicas, Emax)
