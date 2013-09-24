@@ -4,7 +4,7 @@ from nested_sampling._nested_sampling import NestedSampling
 from nested_sampling import run_nested_sampling
 
 from sens.models._lj_tools import LJClusterSENS
-from sens import NestedSamplingSA, NestedSamplingSAExact
+from sens import NestedSamplingSA, NestedSamplingSAExact, HSASamplerCluster
 
 def main():
     parser = argparse.ArgumentParser(description="do nested sampling on a Lennard Jones cluster")
@@ -40,16 +40,19 @@ def main():
     
     mcrunner = system.get_mc_walker(args.mciter)
     nskwargs = dict(nproc=args.nproc, 
-                        verbose=not args.q, iprint=args.iprint)
+                    verbose=not args.q, iprint=args.iprint)
     
     print "mciter", args.mciter
     print "radius", args.radius
     if args.sens_exact:
-        ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner,
-                                   minima, energy_accuracy,
-                                   mindist=system.get_mindist(niter=1),
-                                   minimizer=system.get_minimizer(tol=1e-4),
-                                   center_minima=True,
+        hsa_sampler = HSASamplerCluster(minima, system.k, copy_minima=True, 
+                center_minima=True, energy_accuracy=energy_accuracy, 
+                compare_structures=system.get_compare_exact(), 
+                mindist=system.get_mindist(), 
+                minimizer=system.get_minimizer(), 
+                debug=True)
+        ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner, hsa_sampler,
+                                   config_tests=system.get_config_tests(),
                                    **nskwargs)
     else:
         ns = NestedSampling(system, args.nreplicas, mcrunner, 

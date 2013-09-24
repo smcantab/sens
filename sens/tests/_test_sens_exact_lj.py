@@ -4,7 +4,7 @@ import numpy as np
 from pele.thermodynamics import get_thermodynamic_information
 
 
-from sens._sens_exact import NestedSamplingSAExact
+from sens import NestedSamplingSAExact, HSASamplerCluster
 from sens import get_all_normalmodes
 from sens.models._lj_tools import LJClusterSENS
 
@@ -47,11 +47,18 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
         self.mc_runner = self.system.get_mc_walker(mciter=200)
 
         self.energy_accuracy = 1e-4
+        self.hsa_sampler = HSASamplerCluster(self.minima, self.system.k, copy_minima=True, 
+                                             center_minima=True, 
+                                             energy_accuracy=self.energy_accuracy, 
+                                             compare_structures=self.system.get_compare_exact(), 
+                                             mindist=self.system.get_mindist(), 
+                                             minimizer=self.system.get_minimizer(), 
+                                             debug=True)
+
         self.ns = NestedSamplingSAExact(self.system, self.nreplicas, self.mc_runner,
-                                   self.minima, self.energy_accuracy, 
-                                   mindist=self.system.get_mindist(),
-                                   config_tests = self.system.get_config_tests(),
-                                   stepsize=0.1, nproc=nproc, verbose=True, iprint=100)
+                                   self.hsa_sampler,
+                                   config_tests=self.system.get_config_tests(),
+                                   nproc=nproc, verbose=True, iprint=100, debug=True)
         
         self.Emax0 = self.ns.replicas[-1].energy
         

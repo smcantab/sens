@@ -15,9 +15,8 @@ from sens._HSA_sampler_cluster import HSASamplerCluster
 class _HSASwapper(object):
     """organize the swapping with the HSA
     """
-    def __init__(self, hsa_sampler, minimizer, potential, config_tests=None):
+    def __init__(self, hsa_sampler, potential, config_tests=None):
         self.hsa_sampler = hsa_sampler
-        self.minimizer = minimizer
         self.potential = potential
         self.config_tests = config_tests
 
@@ -88,46 +87,49 @@ class NestedSamplingSAExact(NestedSampling):
     minima : list of Minimum objects
     """
     def __init__(self, system, nreplicas, mc_runner, 
-                  minima, energy_accuracy, compare_structures=None, mindist=None,
-                  copy_minima=True, config_tests=None, minimizer=None, center_minima=False,
+                  hsa_sampler, config_tests=None,
                   debug=True,
                   **kwargs):
         super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.debug = debug
-        
-        self.compare_structures = compare_structures
-        if compare_structures is None:
-            try:
-                self.compare_structures = self.system.get_compare_exact()
-            except NotImplementedError or AttributeError:
-                pass
-        
-        self.mindist = mindist
-        if mindist is None:
-            try:
-                self.mindist = self.system.get_mindist()
-            except NotImplementedError or AttributeError:
-                pass
-
         self.config_tests = config_tests
-        if config_tests is None:
-            try:
-                self.config_tests = self.system.get_config_tests()
-            except NotImplementedError or AttributeError:
-                pass
-
-        self.minimizer = minimizer
-        if self.minimizer is None:
-            self.minimizer = self.system.get_minimizer()
+        if self.debug and self.config_tests is None:
+            print "warning: using no config tests"
+        
+#        self.compare_structures = compare_structures
+#        if compare_structures is None:
+#            try:
+#                self.compare_structures = self.system.get_compare_exact()
+#            except NotImplementedError or AttributeError:
+#                pass
+        
+#        self.mindist = mindist
+#        if mindist is None:
+#            try:
+#                self.mindist = self.system.get_mindist()
+#            except NotImplementedError or AttributeError:
+#                pass
+#
+#        self.config_tests = config_tests
+#        if config_tests is None:
+#            try:
+#                self.config_tests = self.system.get_config_tests()
+#            except NotImplementedError or AttributeError:
+#                pass
+#
+#        self.minimizer = minimizer
+#        if self.minimizer is None:
+#            self.minimizer = self.system.get_minimizer()
         
 #        self.minima_searcher = _MinimaSearcher(self.minima, energy_accuracy, self.compare_structures)
-        self.hsa_sampler = HSASamplerCluster(minima, self.system.k, copy_minima=copy_minima, 
-                                             center_minima=center_minima, energy_accuracy=energy_accuracy, 
-                                             compare_structures=self.compare_structures, 
-                                             mindist=self.mindist, 
-                                             minimizer=self.minimizer, 
-                                             debug=self.debug)
-        self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.minimizer, self.system, 
+#        self.hsa_sampler = HSASamplerCluster(minima, self.system.k, copy_minima=copy_minima, 
+#                                             center_minima=center_minima, energy_accuracy=energy_accuracy, 
+#                                             compare_structures=self.compare_structures, 
+#                                             mindist=self.mindist, 
+#                                             minimizer=self.minimizer, 
+#                                             debug=self.debug)
+        self.hsa_sampler = hsa_sampler
+        self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.system, 
                                       config_tests=self.config_tests)
         
         self.count_sampled_minima = 0
