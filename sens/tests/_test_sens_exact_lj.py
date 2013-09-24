@@ -68,7 +68,7 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     
     def test1(self):
         super(TestSENSExact_LJ, self).test1()
-        self.assertGreater(self.ns.number_swaps_accepted, 0)
+        self.assertGreater(self.ns.number_swaps_accepted(), 0)
         
         
         
