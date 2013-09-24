@@ -27,11 +27,12 @@ class NestedSamplingSA(NestedSampling):
     minima : list of Minimum objects
     """
     def __init__(self, system, nreplicas, mc_runner, minima, 
-                  minprob=None, energy_offset=None,
-                  **kwargs):
+                  minprob=None, energy_offset=None, copy_minima=True, 
+                  center_minima=False, **kwargs):
         super(NestedSamplingSA, self).__init__(system, nreplicas, mc_runner, **kwargs)
         self.minima = minima
-        self.bh_sampler = SASampler(self.minima, self.system.k)
+        self.nreplicas = nreplicas
+        self.bh_sampler = SASampler(self.minima, self.system.k, copy_minima, center_minima)
         if minprob is None:
             raise ValueError("minprob cannot be None")
         self.minprob = minprob
@@ -94,10 +95,13 @@ class NestedSamplingSA(NestedSampling):
         increases as Emax get's lower, reaching a maximum of self.minprob.  
 
         value of Emax where the probabilty starts to get large is energy_max_database + energy_offset where
-        energy_max_database is the maximum energy minimum in the database.  This behavior
+        energy_max_database is the maximum energy minimum in the database.  This behaviour
         can be adjusted with parameter energy_offset.
         
-        parameter b determines the speed at which it turns on.
+        parameter <energy_onset_width> determines the speed at which it turns on.
+        
+        the optimal probability of sampling from the database scales approximately as 1/nreplicas, 
+        this has been shown analytically (see Stefano's thesis pp.29-32). 
         
         """
         if not hasattr(self, "_energy_max_database"):
@@ -109,23 +113,22 @@ class NestedSamplingSA(NestedSampling):
         if np.log(np.finfo('d').max) <= (-f):
             onset_prob = max_prob
         else:
-            onset_prob = max_prob / ( 1. + np.exp(-f))
-        return onset_prob
+            onset_prob = max_prob / (1. + np.exp(-f))
+        return float(onset_prob)/self.nreplicas
     
     def get_starting_configurations(self, Emax):
         """this function overloads the function in NestedSampling"""
         # choose a replica randomly
         configs = self.get_starting_configurations_from_replicas()
         # replace each starting configuration with a one chosen
-        # from the minima with probability prob
+        # from the minima with probability onset_prob
         onset_prob = self.onset_prob_func(Emax)
-        prob = onset_prob / float(self.nreplicas)
         for i in range(len(configs)):
-            if np.random.uniform(0,1) < prob:
+            if np.random.uniform(0,1) < onset_prob:
                 x, energy = self.get_starting_configuration_minima(Emax)
                 configs[i] = Replica(x, energy, from_random=False)
                 if self.verbose:
-                    print "sampling from minima, E minimum:", energy, "with probability:", prob
+                    print "sampling from minima, E minimum:", energy, "with probability:", onset_prob
         return configs
 
 if __name__ == "__main__":

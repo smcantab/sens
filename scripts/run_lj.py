@@ -16,20 +16,25 @@ def main():
     parser.add_argument("--radius", type=float, default=2.5, help="maintain atoms in a sphere of this radius")
     parser.add_argument("--iprint", type=int, default=1, help="if verbose, status messages will be printed every iprint steps")
     parser.add_argument("--sens-exact", action="store_true", help="use the exact version of superposition enhanced nested sampling")
+    parser.add_argument("--sens-approximate", action="store_true", help="use the approximate version of superposition enhanced nested sampling")
+    parser.add_argument("--minprob", type=float, default=1., help="only for sens-approximate: probability of sampling from the database (by default <minprob>/K),"
+                        "default value 1")
+    parser.add_argument("--energy-offset", type=float, default=2.5, help="only for sens-approximate: value of Emax where the probabilty"
+                        "starts to become non zero is <energy_max_database> + <energy_offset>")
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
     parser.add_argument("--stop-crit", type=float, default=1e-5, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
     args = parser.parse_args()
     print args
     
-    if args.sens_exact and args.db == "":
+    if (args.sens_exact or args.sens_approximate) and args.db == "":
         raise Exception("for sens you must specify a database file")
     
 
     system = LJClusterSENS(args.natoms, args.radius)
     energy_accuracy = 1e-3
 
-    if args.sens_exact:
+    if args.sens_exact or args.sens_approximate:
         database = system.create_database(args.db, createdb=False)
         if args.nminima <= 0 or args.nminima > database.number_of_minima(): 
             minima = database.minima()
@@ -54,6 +59,10 @@ def main():
         ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner, hsa_sampler,
                                    config_tests=system.get_config_tests(),
                                    **nskwargs)
+    elif args.sens_approximate:
+        ns = NestedSamplingSA(system, args.nreplicas, mcrunner, minima, 
+                              minprob=args.minprob, energy_offset=args.energy_offset, copy_minima=True,
+                              center_minima=True, **nskwargs)
     else:
         ns = NestedSampling(system, args.nreplicas, mcrunner, 
                             **nskwargs)
