@@ -142,18 +142,18 @@ class NestedSamplingSAExact(NestedSampling):
         object to do the step taking.  must be callable and have attribute takestep.stepsize
     minima : list of Minimum objects
     """
-    def __init__(self, system, nreplicas, mc_runner, 
-                  hsa_sampler, config_tests=None,
+    def __init__(self, replicas, mc_runner,
+                  hsa_sampler, potential, config_tests=None,
                   debug=True,
                   **kwargs):
-        super(NestedSamplingSAExact, self).__init__(system, nreplicas, mc_runner, **kwargs)
+        super(NestedSamplingSAExact, self).__init__(replicas, mc_runner, **kwargs)
         self.debug = debug
         self.config_tests = config_tests
         if self.debug and self.config_tests is None:
             print "warning: using no config tests"
         
         self.hsa_sampler = hsa_sampler
-        self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.system, 
+        self.hsa_swapper = _HSASwapper(self.hsa_sampler, potential, 
                                       config_tests=self.config_tests)
         
         self._times = Result(mc=0., sampling=0.)

@@ -48,13 +48,13 @@ class TestSamplerNS(unittest.TestCase):
         
         
         self.nreplicas = 500
-        replicas = [Replica(x, energy) for energy, x in 
+        replicas = [Replica(x, energy) for energy, x in
                     [self.system.sample_configuration(10.) for i in range(self.nreplicas)]]
         
         mc_walker = self.system 
-        ns = NestedSampling(self.system, nreplicas=self.nreplicas, 
+        ns = NestedSampling(replicas, 
                             mc_walker=mc_walker, nproc=1, verbose=False, 
-                            iprint=100, replicas=replicas)
+                            iprint=100)
         run_nested_sampling(ns, label="test")
         
         self.energies = np.array(ns.max_energies)

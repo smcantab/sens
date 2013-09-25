@@ -1,5 +1,6 @@
 from sens import get_all_normalmodes
 from pele.thermodynamics import get_thermodynamic_information
+from nested_sampling import Replica
 
 def build_database(system, nminima, dbfname=None, maxiter=1000):
     if dbfname is None:
@@ -20,4 +21,10 @@ def build_database(system, nminima, dbfname=None, maxiter=1000):
     get_all_normalmodes(system, db)
     
     return db
-        
+
+def create_replicas(system, nreplicas):
+    replicas = []
+    for i in xrange(nreplicas):
+        x = system.get_random_configuration()
+        replicas.append(Replica(x, system.get_energy(x)))
+    return replicas

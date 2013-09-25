@@ -4,7 +4,7 @@ import numpy as np
 from sens import NestedSamplingSA
 
 import _test_ns_lj
-from _utils import build_database
+from _utils import build_database, create_replicas
 
 class TestSENS_LJ_Long(_test_ns_lj.TestNS_LJ):
     def setUp(self):
@@ -24,8 +24,10 @@ class TestSENS_LJ_Long(_test_ns_lj.TestNS_LJ):
 
         self.mc_runner = self.system.get_mc_walker(mciter=10000)
 
-        self.ns = NestedSamplingSA(self.system, self.nreplicas, self.mc_runner,
-                                   minima=self.minima, minprob=0.1,
+        replicas = create_replicas(self.system, self.nreplicas)
+        self.ns = NestedSamplingSA(replicas, self.mc_runner, self.minima, self.system.k,
+                                   config_tests=self.system.get_config_tests(),
+                                   minprob=0.1,
                                    stepsize=0.1, nproc=nproc, verbose=True,
                                    iprint=100)
         

@@ -4,6 +4,7 @@ import numpy as np
 from nested_sampling import NestedSampling
 
 import _test_ns_lj
+import _utils
 
 class TestNS_LJ_Long(_test_ns_lj.TestNS_LJ):
     def setUp(self):
@@ -17,7 +18,8 @@ class TestNS_LJ_Long(_test_ns_lj.TestNS_LJ):
         
         self.mc_runner = self.system.get_mc_walker(mciter=10000)
 
-        self.ns = NestedSampling(self.system, self.nreplicas, self.mc_runner, 
+        replicas = _utils.create_replicas(self.system, self.nreplicas)
+        self.ns = NestedSampling(replicas, self.mc_runner, 
                                  stepsize=self.stepsize, nproc=nproc, 
                                  verbose=True, iprint=100)
         

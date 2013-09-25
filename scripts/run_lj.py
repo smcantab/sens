@@ -1,7 +1,7 @@
 import argparse
 
-from nested_sampling._nested_sampling import NestedSampling
-from nested_sampling import run_nested_sampling
+from nested_sampling import NestedSampling
+from nested_sampling import run_nested_sampling, Replica
 
 from sens.models._lj_tools import LJClusterSENS
 from sens import NestedSamplingSA, NestedSamplingSAExact, HSASamplerCluster
@@ -47,6 +47,19 @@ def main():
     nskwargs = dict(nproc=args.nproc, 
                     verbose=not args.q, iprint=args.iprint)
     
+    # create the potential object
+    potential = system.get_potential()
+    potential.get_energy = potential.getEnergy
+
+    # create the replicas
+    replicas = []
+    for i in xrange(args.nreplicas):
+        x = system.get_random_configuration()
+        e = potential.getEnergy(x)
+        replicas.append(Replica(x, e))
+        
+        
+    
     print "mciter", args.mciter
     print "radius", args.radius
     if args.sens_exact:
@@ -56,15 +69,17 @@ def main():
                 mindist=system.get_mindist(), 
                 minimizer=system.get_minimizer(), 
                 debug=True)
-        ns = NestedSamplingSAExact(system, args.nreplicas, mcrunner, hsa_sampler,
+        ns = NestedSamplingSAExact(replicas, mcrunner, hsa_sampler, potential,
                                    config_tests=system.get_config_tests(),
                                    **nskwargs)
     elif args.sens_approximate:
-        ns = NestedSamplingSA(system, args.nreplicas, mcrunner, minima, 
-                              minprob=args.minprob, energy_offset=args.energy_offset, copy_minima=True,
-                              center_minima=True, **nskwargs)
+        ns = NestedSamplingSA(replicas, mcrunner, minima, system.k, 
+                              config_tests=system.get_config_tests(),
+                              minprob=args.minprob, energy_offset=args.energy_offset, 
+                              copy_minima=True, center_minima=True, 
+                              **nskwargs)
     else:
-        ns = NestedSampling(system, args.nreplicas, mcrunner, 
+        ns = NestedSampling(replicas, mcrunner, 
                             **nskwargs)
     
     run_nested_sampling(ns, label="lj"+str(args.natoms), etol=args.stop_crit)

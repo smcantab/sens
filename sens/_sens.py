@@ -26,13 +26,14 @@ class NestedSamplingSA(NestedSampling):
         object to do the step taking.  must be callable and have attribute takestep.stepsize
     minima : list of Minimum objects
     """
-    def __init__(self, system, nreplicas, mc_runner, minima, 
+    def __init__(self, replicas, mc_runner, minima, ndof,
+                  config_tests=None, debug=False,
                   minprob=None, energy_offset=None, copy_minima=True, 
                   center_minima=False, **kwargs):
-        super(NestedSamplingSA, self).__init__(system, nreplicas, mc_runner, **kwargs)
+        super(NestedSamplingSA, self).__init__(replicas, mc_runner, **kwargs)
         self.minima = minima
-        self.nreplicas = nreplicas
-        self.bh_sampler = SASampler(self.minima, self.system.k, copy_minima, center_minima)
+        self.bh_sampler = SASampler(self.minima, ndof, copy_minima=copy_minima, 
+                                    center_minima=center_minima)
         if minprob is None:
             raise ValueError("minprob cannot be None")
         self.minprob = minprob
@@ -40,34 +41,38 @@ class NestedSamplingSA(NestedSampling):
             self.energy_offset = 2.5
         else:
             self.energy_offset = energy_offset
+        self.debug = debug
+        self.config_tests = config_tests
+
+        if self.debug and self.config_tests is None:
+            print "warning, not using config tests"
         
         self.count_sampled_minima = 0
         
-    def get_starting_configuration_minima_HA(self, Emax):
-        """using the Harmonic Approximation sample a new configuration starting from a minimum sampled uniformly according to phase space volume
-        
-        Notes
-        -----
-        displace minimum configuration along its eigenvectors
-        
-        """
-        m = self.bh_sampler.sample_minimum(Emax)        
-        x = self.bh_sampler.sample_coords_from_basin(m, Emax)
-        pot = self.system.get_potential()
-        e = pot.getEnergy(x)
-        return x, e
+#    def get_starting_configuration_minima_HA(self, Emax):
+#        """using the Harmonic Approximation sample a new configuration starting from a minimum sampled uniformly according to phase space volume
+#        
+#        Notes
+#        -----
+#        displace minimum configuration along its eigenvectors
+#        
+#        """
+#        m = self.bh_sampler.sample_minimum(Emax)        
+#        x = self.bh_sampler.sample_coords_from_basin(m, Emax)
+#        pot = self.system.get_potential()
+#        e = pot.getEnergy(x)
+#        return x, e
     
     def get_starting_configuration_minima_single(self, Emax):
         """return a minimum sampled uniformly according to phase space volume"""
         m = self.bh_sampler.sample_minimum(Emax)
-        x, e = m.coords, m.energy
-        self.system.center_coords(x)
-        if True:
-            accept_tests = self.system.get_config_tests()
-            for test in accept_tests:
+        x, e = m.coords.copy(), m.energy
+#        self.system.center_coords(x)
+        if self.config_tests is not None:
+            for test in self.config_tests:
                 t = test(coords=x)
                 if not t:
-                    print "warning: minimum from database failed configuration test", m._id, m.energy
+                    print "warning: minimum from database failed configuration test", m.energy
                     raise ConfigTestError()
         return x, e
 
@@ -131,26 +136,3 @@ class NestedSamplingSA(NestedSampling):
                     print "sampling from minima, E minimum:", energy, "with probability:", onset_prob
         return configs
 
-if __name__ == "__main__":
-    # define the system
-    from lj_run import LJClusterNew
-    natoms = 13
-    system = LJClusterNew(natoms)
-
-    db = system.create_database("lj%d.db" % (natoms))
-#    if True:
-#        populate_database(system, db, niter=100)
-    
-    print "pgorder", db.minima()[0].pgorder
-    print "fvib", db.minima()[0].fvib
-    get_thermodynamic_information(system, db)
-    print "pgorder", db.minima()[0].pgorder
-    print "fvib", db.minima()[0].fvib
-    
-    Emin = db.minima()[0].energy
-    Emax = Emin + 1.
-
-    k = system.k
-    for i in range(10):
-        coords, E = sample_from_database(system, db, Emax)
-    

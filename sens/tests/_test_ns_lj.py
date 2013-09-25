@@ -6,6 +6,8 @@ from nested_sampling.src.cv_trapezoidal import compute_cv_c
 
 from sens.models._lj_tools import LJClusterSENS
 
+import _utils
+
 class TestNS_LJ(unittest.TestCase):
     def setUp(self):
         self.setUp1()
@@ -31,7 +33,8 @@ class TestNS_LJ(unittest.TestCase):
         
         self.mc_runner = self.system.get_mc_walker(mciter=100)
 
-        self.ns = NestedSampling(self.system, self.nreplicas, self.mc_runner, 
+        replicas = _utils.create_replicas(self.system, self.nreplicas)
+        self.ns = NestedSampling(replicas, self.mc_runner, 
                                  stepsize=0.1, nproc=nproc, verbose=False)
         
         self.Emax0 = self.ns.replicas[-1].energy

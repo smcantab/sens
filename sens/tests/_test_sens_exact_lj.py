@@ -10,6 +10,8 @@ from sens.models._lj_tools import LJClusterSENS
 
 import _test_ns_lj
 
+import _utils
+
 class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.seed = np.random.randint(1000000)
@@ -55,8 +57,11 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
                                              minimizer=self.system.get_minimizer(), 
                                              debug=True)
 
-        self.ns = NestedSamplingSAExact(self.system, self.nreplicas, self.mc_runner,
-                                   self.hsa_sampler,
+        replicas = _utils.create_replicas(self.system, self.nreplicas)
+        potential = self.system.get_potential()
+        potential.get_energy = potential.getEnergy
+        self.ns = NestedSamplingSAExact(replicas, self.mc_runner,
+                                   self.hsa_sampler, potential,
                                    config_tests=self.system.get_config_tests(),
                                    nproc=nproc, verbose=True, iprint=100, debug=True)
         
