@@ -3,8 +3,6 @@ from collections import namedtuple
 import numpy as np
 
 from sens import SASampler
-from twisted.python.formmethod import InputError
-
 
 class _UnboundMinimumSmall(object):
     """represent a minimum object unbound from the database"""
