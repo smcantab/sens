@@ -23,7 +23,7 @@ def main():
                         "starts to become non zero is <energy_max_database> + <energy_offset>")
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
-    parser.add_argument("--stop-crit", type=float, default=1e-5, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
+    parser.add_argument("--stop-crit", type=float, default=1e-3, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
     args = parser.parse_args()
     print args
     
@@ -40,7 +40,7 @@ def main():
             minima = database.minima()
         else:
             minima = database.minima()[:args.nminima]
-
+        print "using", len(minima), "minima"
     
     
     mcrunner = system.get_mc_walker(args.mciter)
