@@ -152,49 +152,26 @@ class NestedSamplingSAExact(NestedSampling):
         if self.debug and self.config_tests is None:
             print "warning: using no config tests"
         
-#        self.compare_structures = compare_structures
-#        if compare_structures is None:
-#            try:
-#                self.compare_structures = self.system.get_compare_exact()
-#            except NotImplementedError or AttributeError:
-#                pass
-        
-#        self.mindist = mindist
-#        if mindist is None:
-#            try:
-#                self.mindist = self.system.get_mindist()
-#            except NotImplementedError or AttributeError:
-#                pass
-#
-#        self.config_tests = config_tests
-#        if config_tests is None:
-#            try:
-#                self.config_tests = self.system.get_config_tests()
-#            except NotImplementedError or AttributeError:
-#                pass
-#
-#        self.minimizer = minimizer
-#        if self.minimizer is None:
-#            self.minimizer = self.system.get_minimizer()
-        
-#        self.minima_searcher = _MinimaSearcher(self.minima, energy_accuracy, self.compare_structures)
-#        self.hsa_sampler = HSASamplerCluster(minima, self.system.k, copy_minima=copy_minima, 
-#                                             center_minima=center_minima, energy_accuracy=energy_accuracy, 
-#                                             compare_structures=self.compare_structures, 
-#                                             mindist=self.mindist, 
-#                                             minimizer=self.minimizer, 
-#                                             debug=self.debug)
         self.hsa_sampler = hsa_sampler
         self.hsa_swapper = _HSASwapper(self.hsa_sampler, self.system, 
                                       config_tests=self.config_tests)
         
-#        self.count_sampled_minima = 0
         self._times = Result(mc=0., sampling=0.)
         self._times.at_start = time.time()
+        self._swap_info = _SwapInfoAccumulator()
+
+        # Determine the minimum energy for swapping.
+        # There is no point in swapping if there is only one minimum.
+        # So stop swapping when Emax is less than the energy of the second lowest minimum
+        energies = [m.energy for m in self.hsa_sampler.minima]
+        energies.sort()
+        self._swap_Emax_min = energies[1]
+        if self.verbose:
+            print "will stop swapping when Emax is less than", self._swap_Emax_min
+        
         
         self._set_up_parallelization_swap()
         
-        self._swap_info = _SwapInfoAccumulator()
 
     def number_swaps_accepted(self):
         return self._swap_info.number_of_swaps()
@@ -264,6 +241,8 @@ class NestedSamplingSAExact(NestedSampling):
 
     def _attempt_swaps(self, replicas, Emax):
         """attempt to swap the replicas"""
+        if Emax < self._swap_Emax_min:
+            return
         if self.nproc > 1:
             return self._attempt_swaps_parallel(replicas, Emax)
         else:

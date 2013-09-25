@@ -118,7 +118,7 @@ class HSASamplerCluster(SASampler):
         # check if that minimum is in the database.  reject if not
         m, transformation = self.minima_searcher.get_minimum(qresult.energy, qresult.coords)
         if m is None:
-            print "rejecting.  minima not in database"
+#            print "rejecting.  minima not in database"
             return None
         
         # put replica.coords into best alignment with the structure stored in m.coords
