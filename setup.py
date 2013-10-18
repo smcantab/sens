@@ -32,17 +32,17 @@ setup(
     ext_modules = 
         [
             Extension("sens.src.weighted_pick", ["sens/src/weighted_pick.c"],
-                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3'],
+                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3','-march=native','-mtune=native'],
                       include_dirs=[numpy_include],
                        ),
             Extension("sens.src.runmc", ["sens/src/runmc.c", "sens/src/mc.c", "sens/src/lj.c"],
                       include_dirs=gslpy_include,
-                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3'],
+                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3','-march=native','-mtune=native'],
                       libraries=['gsl', 'gslcblas', 'm']
                         ),
             Extension("sens.src.run_ising_mc", ["sens/src/run_ising_mc.c", "sens/src/mcising.c"],
                       include_dirs=gslpy_include,
-                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3',],
+                      extra_compile_args = ['-Wextra','-pedantic','-funroll-loops','-O3','-march=native','-mtune=native'],
                       libraries=['gsl', 'gslcblas', 'm']
                         ), 
         ]
