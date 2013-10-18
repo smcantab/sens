@@ -63,7 +63,7 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
         self.ns = NestedSamplingSAExact(replicas, self.mc_runner,
                                    self.hsa_sampler, potential,
                                    config_tests=self.system.get_config_tests(),
-                                   nproc=nproc, verbose=True, iprint=100, debug=True)
+                                   nproc=nproc, verbose=True, iprint=1, debug=True)
         
         self.Emax0 = self.ns.replicas[-1].energy
         
@@ -81,8 +81,8 @@ class TestSENSExact_LJ(_test_ns_lj.TestNS_LJ):
 
 class TestSENSExact_LJ_Par(TestSENSExact_LJ):
     def setUp(self):
-        print "\n\nnproc ", 3
-        self.setUp1(nproc=3)
+        print "\n\nnproc ", 2
+        self.setUp1(nproc=2)
     
     
 if __name__ == "__main__":

@@ -182,7 +182,7 @@ if __name__ == "__main__":
     ax.set_xlim((xbot,xtop))
     ax.set_ylim((ybot,ytop))
     #ax.axhline(y=3)
-    ax.invert_xaxis()
+    #ax.invert_xaxis()
     
     
     if xlog is True: 

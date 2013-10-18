@@ -48,7 +48,7 @@ class TestSENS_LJ(_test_ns_lj.TestNS_LJ):
 
 class testSENS_LJ_Par(TestSENS_LJ):
     def setUp(self):
-        self.setUp1(nproc=3)
+        self.setUp1(nproc=2)
     
     
 if __name__ == "__main__":

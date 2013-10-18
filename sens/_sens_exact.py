@@ -40,7 +40,9 @@ class _HSASwapper(object):
             return res
         
         # compute the energy of the replica within the superposition approximation.
-        E_HSA = self.hsa_sampler.compute_energy_in_HSA(replica.energy, replica.x)
+        # m_quench returns the minimum to which the replica is quenched to, 
+        # thus identifying in which basin the replica is
+        m_quench, E_HSA = self.hsa_sampler.compute_energy_in_HSA(replica.energy, replica.x)
         res.nfev += self.hsa_sampler._nfev_last_quench
         
         # reject if the returned energy is None.  This probably means that replica.x quenched to a minimum not in the database
@@ -58,6 +60,7 @@ class _HSASwapper(object):
         res.new_replica = Replica(xsampled, Esampled, from_random=False)
         res.minimum = m
         res.E_HSA = E_HSA
+        res.m_quench = m_quench
         
         return res
 
@@ -84,6 +87,8 @@ class _HSASwapperParallel(mp.Process):
 class _SwapInfoAccumulator(object):
     def __init__(self):
         self._sampled_minima_counts = collections.Counter()
+        self._effective_swap_counts_from = collections.Counter()
+        self._effective_swap_counts_to = collections.Counter()
         self._reasons_rejected = collections.Counter()
         self.nfev = 0
     
@@ -93,12 +98,18 @@ class _SwapInfoAccumulator(object):
             self._reasons_rejected[result.reason_rejected] += 1
         else:
             self._sampled_minima_counts[result.minimum.energy] += 1
+            if result.m_quench.energy != result.minimum.energy:
+                self._effective_swap_counts_from[result.m_quench.energy] += 1
+                self._effective_swap_counts_to[result.minimum.energy] += 1
     
     def number_of_rejected_swaps(self):
         return sum(self._reasons_rejected.itervalues())
     
     def number_of_swaps(self):
         return sum(self._sampled_minima_counts.itervalues())
+    
+    def number_of_effective_swaps(self):
+        return sum(self._effective_swap_counts_to.itervalues())
     
     def number_of_swap_attempts(self):
         return sum(self.number_of_rejected_swaps() + self.number_of_swaps())
@@ -108,6 +119,24 @@ class _SwapInfoAccumulator(object):
         for energy, count in sorted(self._sampled_minima_counts.iteritems(), key=lambda mc: mc[0]):
             ostr += str(energy) + ": " + str(count) + ", "
         if len(self._sampled_minima_counts) > 0:
+            # remove the comma and space before returning
+            ostr = ostr[:-2]
+        return ostr
+    
+    def effective_swap_to_minima_string(self):
+        ostr = "effective swaps to minima: "
+        for energy, count in sorted(self._effective_swap_counts_to.iteritems(), key=lambda mc: mc[0]):
+            ostr += str(energy) + ": " + str(count) + ", "
+        if len(self._effective_swap_counts_to) > 0:
+            # remove the comma and space before returning
+            ostr = ostr[:-2]
+        return ostr
+    
+    def effective_swap_from_minima_string(self):
+        ostr = "effective swaps from minima: "
+        for energy, count in sorted(self._effective_swap_counts_from.iteritems(), key=lambda mc: mc[0]):
+            ostr += str(energy) + ": " + str(count) + ", "
+        if len(self._effective_swap_counts_from) > 0:
             # remove the comma and space before returning
             ostr = ostr[:-2]
         return ostr
@@ -123,6 +152,8 @@ class _SwapInfoAccumulator(object):
     
     def print_info(self):
         print self.minima_sampled_string()
+        print self.effective_swap_to_minima_string()
+        print self.effective_swap_from_minima_string()
         print self.reasons_rejected_string()
          
         

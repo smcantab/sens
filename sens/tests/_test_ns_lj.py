@@ -79,7 +79,7 @@ class TestNS_LJ(unittest.TestCase):
 
 class testNSPar(TestNS_LJ):
     def setUp(self):
-        self.setUp1(nproc=3)
+        self.setUp1(nproc=2)
     
     
 if __name__ == "__main__":

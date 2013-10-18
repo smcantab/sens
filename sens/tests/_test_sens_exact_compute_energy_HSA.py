@@ -95,11 +95,12 @@ class TestSENSExact_LJ(unittest.TestCase):
         
         # use the nested sampling routine to compute the HSA energy of xsampled.
         # This should undo the transformations we applied and find the correct HSA energy 
-        E_HSA_computed = self.sampler.compute_energy_in_HSA(r.energy, r.x)
+        m_quench, E_HSA_computed = self.sampler.compute_energy_in_HSA(r.energy, r.x)
         
         # assert that self.ns._compute_energy_in_SA(r) was able to recover the correct HSA energy
         self.assertIsNotNone(E_HSA_computed)
         self.assertAlmostEqual(E_HSA, E_HSA_computed, delta=1e-4)
+        self.assertAlmostEqual(m.energy, m_quench.energy, delta=1e-4)
         
     def fchain(self, flist):
         """return a function which applies all of the functions in flist to the input"""

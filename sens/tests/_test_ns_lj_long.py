@@ -10,7 +10,7 @@ class TestNS_LJ_Long(_test_ns_lj.TestNS_LJ):
     def setUp(self):
         self.setUp1()
 
-    def setUp1(self, nproc=4):
+    def setUp1(self, nproc=2):
         self.set_up_system()
         self.nreplicas = 50
         self.stepsize = 0.01

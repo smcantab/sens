@@ -119,7 +119,7 @@ class HSASamplerCluster(SASampler):
         m, transformation = self.minima_searcher.get_minimum(qresult.energy, qresult.coords)
         if m is None:
 #            print "rejecting.  minima not in database"
-            return None
+            return None, None
         
         # put replica.coords into best alignment with the structure stored in m.coords
         # this involves accounting for symmetries of the Hamiltonian like translational, 
@@ -153,4 +153,4 @@ class HSASamplerCluster(SASampler):
         
         energy = self.compute_energy(x, m)
         
-        return energy    
+        return m, energy    
