@@ -47,6 +47,9 @@ if __name__ == "__main__":
     parser.add_argument("--xbot", type=float, help="set x-axis bottom",default=None)
     parser.add_argument("--ytop", type=float, help="set y-axis top",default=None)
     parser.add_argument("--ybot", type=float, help="set y-axis bottom",default=None)
+    parser.add_argument("--xcol", type=int, help="choose column for x in data file",default=None)
+    parser.add_argument("--ycol", type=int, help="choose column for y in data file",default=None)
+    parser.add_argument("--errcol", type=int, help="choose column for stdev in data file",default=None)
     parser.add_argument("--xpow", type=float, help="set x-axis power limit for notation",default=None)
     parser.add_argument("--ypow", type=float, help="set y-axis power limit for notation",default=None)
     parser.add_argument("--title", type=str, help="set title",default=None)
@@ -79,6 +82,9 @@ if __name__ == "__main__":
     xbot = args.xbot
     ytop = args.ytop
     ybot = args.ybot
+    xcol = args.xcol
+    ycol = args.ycol
+    errcol = args.ycol
     colormap = args.colormap
     errcolor = args.ecolor
     ebar = args.ebar
@@ -111,11 +117,22 @@ if __name__ == "__main__":
             if ((i+1) % 2) is not 0:
                 data = np.genfromtxt(name)
                 dshape = np.shape(data)
-                if dshape[1] > 3:
+                if dshape[1] >= 3:
                     new_data = np.zeros([dshape[0],3])
                     for k in xrange(dshape[0]):
-                        for l in xrange(3):
-                            new_data[k][l] = data[k][l]
+                        #for l in xrange(3):
+                        if xcol!=None:
+                            new_data[k][0] = data[k][xcol]
+                        else:
+                            new_data[k][0] = data[k][0]
+                        if ycol!=None:
+                            new_data[k][1] = data[k][ycol]
+                        else:
+                            new_data[k][1] = data[k][1]
+                        if errcol!=None:
+                            new_data[k][2] = data[k][errcol]
+                        else:
+                            new_data[k][2] = data[k][2]
                     data = new_data  
                 elif dshape[1] < 3:
                     data = np.hstack((data, np.zeros((data.shape[0], 1), dtype=data.dtype))) ##adds an error of 0 if there's no error associated
@@ -129,11 +146,23 @@ if __name__ == "__main__":
         for name,i in zip(fname,xrange(len(fname))):
             data = np.genfromtxt(name)
             dshape = np.shape(data)
-            if dshape[1] > 3:
+            if dshape[1] >= 3:
                 new_data = np.zeros([dshape[0],3])
                 for k in xrange(dshape[0]):
-                    for l in xrange(3):
-                       new_data[k][l] = data[k][l]
+                    #for l in xrange(3):
+                       #new_data[k][l] = data[k][l]
+                    if xcol!=None:
+                        new_data[k][0] = data[k][xcol]
+                    else:
+                        new_data[k][0] = data[k][0]
+                    if ycol!=None:
+                        new_data[k][1] = data[k][ycol]
+                    else:
+                        new_data[k][1] = data[k][1]
+                    if errcol!=None:
+                        new_data[k][2] = data[k][errcol]
+                    else:
+                        new_data[k][2] = data[k][2]
                 data = new_data
             elif dshape[1] < 3:
                 data = np.hstack((data, np.zeros((data.shape[0], 1), dtype=data.dtype)))
