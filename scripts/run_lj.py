@@ -24,6 +24,8 @@ def main():
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
     parser.add_argument("--stop-crit", type=float, default=1e-3, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
+    parser.add_argument("--job-name", type=str, help="name of the job")
+    parser.add_argument("--nsIP", type=str, help="IP address of the machine hosting the Name Server")
     args = parser.parse_args()
     print args
     
@@ -45,7 +47,7 @@ def main():
     
     mcrunner = system.get_mc_walker(args.mciter)
     nskwargs = dict(nproc=args.nproc, 
-                    verbose=not args.q, iprint=args.iprint)
+                    verbose=not args.q, iprint=args.iprint, job_name = args.job_name, nsIP = args.nsIP)
     
     # create the potential object
     potential = system.get_potential()
