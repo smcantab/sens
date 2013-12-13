@@ -24,14 +24,15 @@ def main():
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
     parser.add_argument("--stop-crit", type=float, default=1e-3, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
-    parser.add_argument("--job-name", type=str, help="name of the job")
-    parser.add_argument("--nsIP", type=str, help="IP address of the machine hosting the Name Server")
+    parser.add_argument("--cpfile", type=str, help="checkpoint file name, unless renamed it takes default output name: <label>.replicas.p", default = None)
+    parser.add_argument("--cpfreq", type=int, help="checkpointing frequency in number of steps", default = 10000)
+    parser.add_argument("--cpstart", action="store_true", help="start calculation from checkpoint binary file")
+    parser.add_argument("--dispatcherURI", type=str, help="URI of the dispatcher server")
     args = parser.parse_args()
     print args
     
     if (args.sens_exact or args.sens_approximate) and args.db == "":
         raise Exception("for sens you must specify a database file")
-    
 
     system = LJClusterSENS(args.natoms, args.radius)
     energy_accuracy = 1e-3
@@ -46,8 +47,10 @@ def main():
     
     
     mcrunner = system.get_mc_walker(args.mciter)
-    nskwargs = dict(nproc=args.nproc, 
-                    verbose=not args.q, iprint=args.iprint, job_name = args.job_name, nsIP = args.nsIP)
+    nskwargs = dict(nproc=args.nproc, verbose=not args.q,
+                    iprint=args.iprint, dispatcher_URI = args.dispatcherURI, 
+                    cpfreq = args.cpfreq, cpfile = args.cpfile,
+                     cpstart = args.cpstart)
     
     # create the potential object
     potential = system.get_potential()
@@ -84,7 +87,7 @@ def main():
         ns = NestedSampling(replicas, mcrunner, 
                             **nskwargs)
     
-    run_nested_sampling(ns, label="lj"+str(args.natoms), etol=args.stop_crit)
+    run_nested_sampling(ns, label="lj"+str(args.natoms), etol=args.stop_crit, )
     
 
 if __name__ == "__main__":
