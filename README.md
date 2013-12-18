@@ -1,4 +1,4 @@
-sens
+SENS
 ====
 
 An implementation of...
