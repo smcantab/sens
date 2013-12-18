@@ -23,11 +23,13 @@ def main():
                         "starts to become non zero is <energy_max_database> + <energy_offset>")
     parser.add_argument("--db", type=str, help="location of the database", default="")
     parser.add_argument("--nminima", type=int, default=-1, help="number of minima from the database to use.  If negative, use all minima")
+    parser.add_argument("--energy-onset", type=float, help="energy at which start sampling from database, by default maximum energy in database",default=None)
     parser.add_argument("--stop-crit", type=float, default=1e-3, help="run will terminate when stop_crit is larger than the difference between the maximum and minimum replica energies")
     parser.add_argument("--cpfile", type=str, help="checkpoint file name, unless renamed it takes default output name: <label>.replicas.p", default = None)
     parser.add_argument("--cpfreq", type=int, help="checkpointing frequency in number of steps", default = 10000)
     parser.add_argument("--cpstart", action="store_true", help="start calculation from checkpoint binary file")
-    parser.add_argument("--dispatcherURI", type=str, help="URI of the dispatcher server")
+    parser.add_argument("--dispatcherURI", action="store_true", help="use URI of the dispatcher server in default location",default=False)
+    parser.add_argument("--dispatcherURI-file", type=str, help="use URI of the dispatcher server if different from default",default=None)
     args = parser.parse_args()
     print args
     
@@ -45,10 +47,18 @@ def main():
             minima = database.minima()[:args.nminima]
         print "using", len(minima), "minima"
     
+    if args.dispatcherURI is True:
+        with open ("dispatcher_uri.dat", "r") as rfile:
+            dispatcherURI = rfile.read().replace('\n', '')
+    elif args.dispatcherURI_file != None:
+        with open (args.dispatcherURI_file, "r") as rfile:
+            dispatcherURI = rfile.read().replace('\n', '')
+    else:
+        dispatcherURI = None
     
     mcrunner = system.get_mc_walker(args.mciter)
     nskwargs = dict(nproc=args.nproc, verbose=not args.q,
-                    iprint=args.iprint, dispatcher_URI = args.dispatcherURI, 
+                    iprint=args.iprint, dispatcher_URI = dispatcherURI, 
                     cpfreq = args.cpfreq, cpfile = args.cpfile,
                      cpstart = args.cpstart)
     
@@ -81,8 +91,8 @@ def main():
         ns = NestedSamplingSA(replicas, mcrunner, minima, system.k, 
                               config_tests=system.get_config_tests(),
                               minprob=args.minprob, energy_offset=args.energy_offset, 
-                              copy_minima=True, center_minima=True, 
-                              **nskwargs)
+                              energy_onset = args.energy_onset, copy_minima=True, 
+                              center_minima=True, **nskwargs)
     else:
         ns = NestedSampling(replicas, mcrunner, 
                             **nskwargs)

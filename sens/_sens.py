@@ -29,7 +29,7 @@ class NestedSamplingSA(NestedSampling):
     def __init__(self, replicas, mc_runner, minima, ndof,
                   config_tests=None, debug=False,
                   minprob=None, energy_offset=None, copy_minima=True, 
-                  center_minima=False, **kwargs):
+                  center_minima=False, energy_onset = None, **kwargs):
         super(NestedSamplingSA, self).__init__(replicas, mc_runner, **kwargs)
         self.minima = minima
         self.bh_sampler = SASampler(self.minima, ndof, copy_minima=copy_minima, 
@@ -43,7 +43,8 @@ class NestedSamplingSA(NestedSampling):
             self.energy_offset = energy_offset
         self.debug = debug
         self.config_tests = config_tests
-
+        self._energy_max_database = energy_onset
+        
         if self.debug and self.config_tests is None:
             print "warning, not using config tests"
         
@@ -109,7 +110,8 @@ class NestedSamplingSA(NestedSampling):
         this has been shown analytically (see Stefano's thesis pp.29-32). 
         
         """
-        if not hasattr(self, "_energy_max_database"):
+        #if not hasattr(self, "_energy_max_database"):
+        if self._energy_max_database == None:
             self._energy_max_database = float(max([m.energy for m in self.minima]))
         max_prob = float(self.minprob)
         energy_onset_width = 1.
