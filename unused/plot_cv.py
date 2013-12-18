@@ -18,7 +18,6 @@
 #from __future__ import division
 import argparse
 import numpy as np
-import copy
 from itertools import cycle
 import matplotlib
 from matplotlib import rc
@@ -67,6 +66,7 @@ if __name__ == "__main__":
     parser.add_argument("--absinvgrad", action="store_true", help="returns the normalised abs(1/grad(y)), allows to identify stationary points",default=False)
     parser.add_argument("--xlog", action="store_true", help="set x scale to log scale",default=False)
     parser.add_argument("--ylog", action="store_true", help="set y scale to log scale",default=False)
+    parser.add_argument("--inset", action="store_true", help="insert inset",default=False)
     args = parser.parse_args()
     
     fname = args.fname
@@ -97,10 +97,11 @@ if __name__ == "__main__":
     ylog= args.ylog
     xpowlimit = args.xpow
     ypowlimit = args.ypow
+    inset = args.inset
     
     #####################LINE STYLE CYCLER####################
     if slines is False:
-        lines = ["-","--","-.",":"]
+        lines = ["-","--","-."]
     else:
         lines = ["-"]
     linecycler = cycle(lines)
@@ -111,7 +112,7 @@ if __name__ == "__main__":
         
     if nolabels is False:
         all_data = [[] for i in xrange(len(fname)/2)]
-        all_labels = np.array(["no_name" for i in xrange(len(fname)/2)])
+        all_labels = np.array(["no_name______________" for i in xrange(len(fname)/2)])
         j = 0    
         for name,i in zip(fname,xrange(len(fname))):
             if ((i+1) % 2) is not 0:
@@ -168,8 +169,18 @@ if __name__ == "__main__":
                 data = np.hstack((data, np.zeros((data.shape[0], 1), dtype=data.dtype)))
             data = np.array(data)
             all_data[i] = data
-            
+    
     all_data = np.array(all_data)
+    
+#===============================================================================
+    #WRITE SELECTED COLUMNS TO FILE
+#    fo = open("ref.txt", "w+")
+#    for data in all_data: 
+#        for i in xrange(np.shape(data)[0]):
+#            fo.write("{0} \t {1} \n".format(data[i,0],data[i,1]))
+#    fo.close()
+#===============================================================================
+        
     ######################################################################################################
     
     ###############peaks analysis######################################
@@ -214,6 +225,40 @@ if __name__ == "__main__":
     #ax.invert_xaxis()
     
     
+    #===========================================================================
+    # #insert inset
+    #===========================================================================
+    if inset is True:
+        linecycler = cycle(lines)
+        xbot_inset = 0.015
+        xtop_inset = 0.045
+        ybot_inset = None
+        ytop_inset = 130
+        ax_inset=fig.add_axes([0.68,0.68,0.3,0.3])
+        ax_inset.set_color_cycle([cm(1.*i/len(all_data)) for i in xrange(np.shape(all_data)[0])])
+        for data, label, i in zip(all_data, all_labels, xrange(np.shape(all_data)[0])): 
+                if np.shape(data)[1] is 2 or ebar is False:
+                    ax_inset.plot(data[:,0], data[:,1], ls=next(linecycler), label = label, linewidth=linew)
+                elif np.shape(data)[1] is 3 and data[:,2].all() == 0:
+                    ax_inset.plot(data[:,0], data[:,1], ls=next(linecycler), label = label, linewidth=linew)
+                else: #np.shape(data)[1] is 3 and ebar is True:
+                    (line, caps, _) = ax_inset.errorbar(data[:,0], data[:,1], yerr=data[:,2], ls=next(linecycler), ecolor=errcolor, capsize=ecap, label = label, linewidth=linew)
+                    colour = line.get_color()
+                    for cap in caps:
+                        cap.set_color(colour)
+                        cap.set_markeredgewidth(0.05)
+        ax_inset.set_xlim((xbot_inset,xtop_inset))
+        ax_inset.set_ylim((ybot_inset,ytop_inset))
+        ax_inset.set_xlabel(xlabel)
+        ax_inset.set_ylabel(ylabel)
+        ax_inset.locator_params(axis = 'x', nbins = 4)
+    
+    #===========================================================================
+    # #end insert inset
+    #===========================================================================
+    
+    if nolabels is False:
+        ax.legend(frameon=False,loc=legloc)
     if xlog is True: 
         ax.set_xscale('log')
     elif xpowlimit is not None:
@@ -226,10 +271,11 @@ if __name__ == "__main__":
         ax.grid(True,linestyle='--',color='0.75')
     if title is not None:
         ax.set_title(title)
-    if nolabels is False:
-        ax.legend(frameon=False,loc=legloc)
     if show is True:
-         plt.show()
+        plt.show()
     
-    fig.savefig('{F}.{T}'.format(F=filename,T=filetype))
+    if inset is True:
+        fig.savefig('{F}.{T}'.format(F=filename,T=filetype), bbox_extra_artists=(ax_inset,), bbox_inches='tight')
+    else:
+        fig.savefig('{F}.{T}'.format(F=filename,T=filetype), bbox_inches='tight')
     
