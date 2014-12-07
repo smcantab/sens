@@ -7,5 +7,3 @@ A full description of the algorithm is freely available `here <http://link.aps.o
 
 This package requires the following packages:
 * Nested Sampling: https://github.com/js850/nested_sampling
-
-[![githalytics.com alpha](https://cruel-carlota.gopagoda.com/f0a39aa0149d2ef83cbb4cdd587a569c "githalytics.com")](http://githalytics.com/smcantab/sens)
